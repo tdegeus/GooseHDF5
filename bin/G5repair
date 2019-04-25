@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+'''G5repair
+  Extract readable data from a HDF5-file and copy it to a new HDF5-file.
+
+Usage:
+  G5repair [options] <source> <destination>
+
+Arguments:
+  <source>        Source HDF5-file, possibly containing corrupted data.
+  <destination>   Destination HDF5-file.
+
+Options:
+  -f, --force     Force continuation, overwrite existing files.
+  -h, --help      Show help.
+      --version   Show version.
+
+(c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
+'''
+
+# ==================================================================================================
+
+# temporary fix: suppress warning from h5py
+import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import sys, os, re, h5py, docopt, GooseHDF5
+
+# ==================================================================================================
+
+def confirm(message='Proceed [y/n]?\n'):
+  r'''
+Prompt user for confirmation. The function loops until the user responds with
+
+* 'y' -> True
+* 'n' -> False
+  '''
+
+  while True:
+
+    # - prompt message, get user's response
+    user = input(message)
+
+    # - check response
+    if not user                     : print('Please enter y or n.'); continue
+    if user not in ['y','Y','n','N']: print('Please enter y or n.'); continue
+    if user     in ['y','Y'        ]: return True
+    if user     in ['n','N'        ]: return False
+
+# ==================================================================================================
+
+def error(message):
+  r'''
+Print error message and quit.
+  '''
+
+  print(message)
+
+  sys.exit(1)
+
+# ==================================================================================================
+
+def quit(message):
+  r'''
+Prompt user for confirmation. If the response is negative this function quits the program.
+  '''
+
+  if not confirm(message):
+    sys.exit(1)
+
+# ==================================================================================================
+
+def isfile(fname):
+  r'''
+Check if a fail exists, quit otherwise.
+  '''
+
+  if not os.path.isfile(fname):
+    error('"{0:s}" does not exist'.format(fname))
+
+# ==================================================================================================
+
+# parse command-line options
+# --------------------------
+
+args = docopt.docopt(__doc__,version='0.0.2')
+
+# check files
+# -----------
+
+# files that are required to exist
+isfile(args['<source>'])
+
+# check file existence of the destination
+if os.path.isfile(args['<destination>']) and not args['--force']:
+  quit('File "{0:s}" already exists, continue [y/n]? '.format(args['<destination>']))
+
+# get paths
+# ---------
+
+# open HDF5-file
+source = h5py.File(args['<source>'], 'r')
+
+# get paths, that can be read
+paths = GooseHDF5.verify(source, GooseHDF5.getdatasets(source))
+
+# copy
+# ----
+
+# open HDF5-file
+dest = h5py.File(args['<destination>'], 'w')
+
+# copy datasets
+GooseHDF5.copydatasets(source, dest, paths)
+
+# finish
+# ------
+
+# close HDF5-files
+source.close()
+dest  .close()
