@@ -215,13 +215,14 @@ G5compare
     files, and all the content of the datasets is equals
 
   Usage:
-    G5compare [options] <source> <other>
+    G5compare [options] [--renamed ARG]... <source> <other>
 
   Arguments:
     <source>    HDF5-file.
     <other>     HDF5-file.
 
   Options:
+    -r, --renamed=ARG     Renamed paths, separated by a separator (see below).
+    -s, --ifs=ARG         Separator used to separate renamed fields. [default: :]
     -h, --help            Show help.
         --version         Show version.
-

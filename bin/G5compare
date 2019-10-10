@@ -4,13 +4,15 @@
   files, and all the content of the datasets is equals
 
 Usage:
-  G5compare [options] <source> <other>
+  G5compare [options] [--renamed ARG]... <source> <other>
 
 Arguments:
   <source>    HDF5-file.
   <other>     HDF5-file.
 
 Options:
+  -r, --renamed=ARG     Renamed paths, separated by a separator (see below).
+  -s, --ifs=ARG         Separator used to separate renamed fields. [default: :]
   -h, --help            Show help.
       --version         Show version.
 
@@ -28,14 +30,120 @@ import sys, os, re, h5py, docopt, GooseHDF5
 
 # ==================================================================================================
 
+def raise_error(msg):
+  print('Fatal error: ' + msg)
+  sys.exit(1)
+
+# ==================================================================================================
+
 def isfile(fname):
   r'''
 Check if a fail exists, quit otherwise.
   '''
 
   if not os.path.isfile(fname):
-    print('"{0:s}" does not exist'.format(fname))
-    sys.exit(1)
+    raise_error('"{0:s}" does not exist'.format(fname))
+
+# ==================================================================================================
+
+def not_equal(path):
+
+  print('Not equal: {0:s}'.format(path))
+  return False
+
+# ==================================================================================================
+
+def check_dataset(path, a, b):
+
+  # --
+
+  if np.issubdtype(a.dtype, np.number) and np.issubdtype(b.dtype, np.number):
+
+    if not np.allclose(a, b):
+      return not_equal(path)
+
+    return True
+
+  # --
+
+  if a.size != b.size:
+    return not_equal(path)
+
+  # --
+
+  if a.size == 1:
+
+    if a[...] != b[...]:
+      return not_equal(path)
+
+    return True
+
+  # --
+
+  if list(a) != list(b):
+    return not_equal(path)
+
+  return True
+
+# ==================================================================================================
+
+def check_plain(source, other):
+
+  with h5py.File(source, 'r') as source:
+
+    with h5py.File(other, 'r') as other:
+
+      # check missing dataset
+      for path in GooseHDF5.getpaths(source):
+        if path not in other:
+          print('Missing: {0:s}'.format(path))
+
+      # check missing dataset
+      for path in GooseHDF5.getpaths(other):
+        if path not in source:
+          print('Extra: {0:s}'.format(path))
+
+      # check values
+      for path in GooseHDF5.getpaths(source):
+        if path in other:
+          check_dataset(path, source[path][...], other[path][...])
+
+# ==================================================================================================
+
+def check_renamed(source, other, renamed):
+  r'''
+renamed = [['source_name1', 'other_name1'], ['source_name2', 'other_name2'], ...]
+  '''
+
+  with h5py.File(source, 'r') as source:
+
+    with h5py.File(other, 'r') as other:
+
+      # get list of all datasets
+      s2o = {i:i for i in list(GooseHDF5.getpaths(source))}
+      o2s = {i:i for i in list(GooseHDF5.getpaths(other))}
+
+      # rename
+      for s, o in renamed:
+        if s not in s2o: raise_error('"{0:s}" not in {1:s}'.format(s, source.filename))
+        if o not in o2s: raise_error('"{0:s}" not in {1:s}'.format(o, other.filename))
+        s2o[s] = o
+        o2s[o] = s
+
+      # check missing dataset
+      for _, path in s2o.items():
+        if path not in o2s:
+          print('Missing: {0:s}'.format(path))
+
+      # check missing dataset
+      for _, path in o2s.items():
+        if path not in s2o:
+          print('Extra: {0:s}'.format(path))
+
+      # check values
+      for path in s2o:
+        if s2o[path] in o2s:
+          check_dataset(path, source[path][...], other[s2o[path]][...])
 
 # ==================================================================================================
 
@@ -46,29 +154,15 @@ args = docopt.docopt(__doc__,version='0.0.1')
 isfile(args['<source>'])
 isfile(args['<other>'])
 
-with h5py.File(args['<source>'], 'r') as source:
+# check without accounting for renamed field
+if len(args['--renamed']) == 0:
+  check_plain(args['<source>'], args['<other>'])
+  sys.exit(0)
 
-  with h5py.File(args['<other>'], 'r') as other:
+# unpack renaming
+renamed = [i.split(args['--ifs']) for i in args['--renamed']]
 
-    for path in GooseHDF5.getpaths(source):
-      if path not in other:
-        print('Missing: {0:s}'.format(path))
-
-    for path in GooseHDF5.getpaths(other):
-      if path not in source:
-        print('Extra: {0:s}'.format(path))
-
-    for path in GooseHDF5.getpaths(source):
-      if path in other:
-        a = source[path][...]
-        b = other[path][...]
-        if np.issubdtype(a.dtype, np.number) and np.issubdtype(b.dtype, np.number):
-          if not np.allclose(a, b):
-            print('Not equal: {0:s}'.format(path))
-        else:
-          if list(a) != list(b):
-            print('Not equal: {0:s}'.format(path))
-
-
+# check with accounting for renamed field
+check_renamed(args['<source>'], args['<other>'], renamed)
 
 
