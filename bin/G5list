@@ -30,127 +30,66 @@ import sys, os, re, h5py, docopt, GooseHDF5
 
 # ==================================================================================================
 
-def confirm(message='Proceed [y/n]?\n'):
-  r'''
-Prompt user for confirmation. The function loops until the user responds with
-
-* 'y' -> True
-* 'n' -> False
-  '''
-
-  while True:
-
-    # - prompt message, get user's response
-    user = input(message)
-
-    # - check response
-    if not user                     : print('Please enter y or n.'); continue
-    if user not in ['y','Y','n','N']: print('Please enter y or n.'); continue
-    if user     in ['y','Y'        ]: return True
-    if user     in ['n','N'        ]: return False
-
-# ==================================================================================================
-
-def error(message):
-  r'''
-Print error message and quit.
-  '''
-
-  print(message)
-
-  sys.exit(1)
-
-# ==================================================================================================
-
-def quit(message):
-  r'''
-Prompt user for confirmation. If the response is negative this function quits the program.
-  '''
-
-  if not confirm(message):
-    sys.exit(1)
-
-# ==================================================================================================
-
 def isfile(fname):
   r'''
 Check if a fail exists, quit otherwise.
   '''
 
   if not os.path.isfile(fname):
-    error('"{0:s}" does not exist'.format(fname))
+    print('"{0:s}" does not exist'.format(fname))
+    sys.exit(1)
 
 # ==================================================================================================
 
 # parse command-line options
-# --------------------------
-
 args = docopt.docopt(__doc__,version='0.0.2')
 
-# check files
-# -----------
-
-# files that are required to exist
+# check that file exists
 isfile(args['<source>'])
 
-# get paths
-# ---------
+with h5py.File(args['<source>'], 'r') as source:
 
-# open file
-try:
-  source = h5py.File(args['<source>'], 'r')
-except:
-  print('Error reading "{0:s}"'.format(args['<source>']))
-  sys.exit(1)
+  # get iterator to data-sets
+  paths = GooseHDF5.getpaths(source, root=args['--root'], max_depth=args['--max-depth'], fold=args['--fold'])
 
-# get iterator to data-sets
-paths = GooseHDF5.getpaths(source, root=args['--root'], max_depth=args['--max-depth'], fold=args['--fold'])
+  # print without info
+  if not args['--info']:
+    for path in paths:
+      print(path)
 
-# print
-# -----
+  # print with info
+  if args['--info']:
 
-# print without info
-if not args['--info']:
-  for path in paths:
-    print(path)
+    out = {
+      'path'  : [],
+      'size'  : [],
+      'shape' : [],
+      'dtype' : [],
+    }
 
-# print with info
-if args['--info']:
+    for path in paths:
+      if path in source:
+        data = source[path]
+        out['path' ] += [path]
+        out['size' ] += [str(data.size)]
+        out['shape'] += [str(data.shape)]
+        out['dtype'] += [str(data.dtype)]
+      else:
+        out['path' ] += [path]
+        out['size' ] += ['-']
+        out['shape'] += ['-']
+        out['dtype'] += ['-']
 
-  out = {
-    'path'  : [],
-    'size'  : [],
-    'shape' : [],
-    'dtype' : [],
-  }
+    width = {}
+    for key in out:
+      width[key] = max([len(i) for i in out[key]])
+      width[key] = max(width[key], len(key))
 
-  for path in paths:
-    if path in source:
-      data = source[path]
-      out['path' ] += [path]
-      out['size' ] += [str(data.size)]
-      out['shape'] += [str(data.shape)]
-      out['dtype'] += [str(data.dtype)]
-    else:
-      out['path' ] += [path]
-      out['size' ] += ['-']
-      out['shape'] += ['-']
-      out['dtype'] += ['-']
+    fmt = '{0:%ds} {1:%ds} {2:%ds} {3:%ds}' % (width['path'], width['size'], width['shape'], width['dtype'])
 
-  width = {}
-  for key in out:
-    width[key] = max([len(i) for i in out[key]])
-    width[key] = max(width[key], len(key))
+    print(fmt.format('path', 'size', 'shape', 'dtype'))
+    print(fmt.format('='*width['path'], '='*width['size'], '='*width['shape'], '='*width['dtype']))
 
-  fmt = '{0:%ds} {1:%ds} {2:%ds} {3:%ds}' % (width['path'], width['size'], width['shape'], width['dtype'])
+    for i in range(len(out['path'])):
+      print(fmt.format(out['path'][i], out['size'][i], out['shape'][i], out['dtype'][i]))
 
-  print(fmt.format('path', 'size', 'shape', 'dtype'))
-  print(fmt.format('='*width['path'], '='*width['size'], '='*width['shape'], '='*width['dtype']))
-
-  for i in range(len(out['path'])):
-    print(fmt.format(out['path'][i], out['size'][i], out['shape'][i], out['dtype'][i]))
-
-# close file
-# ----------
-
-source.close()

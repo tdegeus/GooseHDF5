@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+'''G5compare
+  Compare two HDF5 files. If the function does not output anything all datasets are present in both
+  files, and all the content of the datasets is equals
+
+Usage:
+  G5compare [options] <source> <other>
+
+Arguments:
+  <source>    HDF5-file.
+  <other>     HDF5-file.
+
+Options:
+  -h, --help            Show help.
+      --version         Show version.
+
+(c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
+'''
+
+# ==================================================================================================
+
+# temporary fix: suppress warning from h5py
+import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import sys, os, re, h5py, docopt, GooseHDF5
+
+# ==================================================================================================
+
+def isfile(fname):
+  r'''
+Check if a fail exists, quit otherwise.
+  '''
+
+  if not os.path.isfile(fname):
+    print('"{0:s}" does not exist'.format(fname))
+    sys.exit(1)
+
+# ==================================================================================================
+
+# parse command-line options
+args = docopt.docopt(__doc__,version='0.0.1')
+
+# check that file exists
+isfile(args['<source>'])
+isfile(args['<other>'])
+
+with h5py.File(args['<source>'], 'r') as source:
+
+  with h5py.File(args['<other>'], 'r') as other:
+
+    for path in GooseHDF5.getpaths(source):
+      if path not in other:
+        print('Missing: {0:s}'.format(path))
+
+    for path in GooseHDF5.getpaths(other):
+      if path not in source:
+        print('Extra: {0:s}'.format(path))
+
+    for path in GooseHDF5.getpaths(source):
+      if path in other:
+        a = source[path][...]
+        b = other[path][...]
+        if np.issubdtype(a.dtype, np.number) and np.issubdtype(b.dtype, np.number):
+          if not np.allclose(a, b):
+            print('Not equal: {0:s}'.format(path))
+        else:
+          if list(a) != list(b):
+            print('Not equal: {0:s}'.format(path))
+
+
+
+
