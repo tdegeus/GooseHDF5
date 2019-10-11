@@ -80,14 +80,14 @@ to the screen and return "False".
 
 # ==================================================================================================
 
-def check_plain(source, other):
+def check_plain(source_name, other_name):
   r'''
 Check all datasets (without allowing for renamed datasets).
   '''
 
-  with h5py.File(source, 'r') as source:
+  with h5py.File(source_name, 'r') as source:
 
-    with h5py.File(other, 'r') as other:
+    with h5py.File(other_name, 'r') as other:
 
       # check missing dataset
       for path in GooseHDF5.getpaths(source):

@@ -36,8 +36,7 @@ Check if a file exists, quit otherwise.
   '''
 
   if not os.path.isfile(fname):
-    print('"{0:s}" does not exist'.format(fname))
-    sys.exit(1)
+    raise IOError('"{0:s}" does not exist'.format(fname))
 
 # ==================================================================================================
 
