@@ -45,7 +45,7 @@ def not_equal(path):
 Support function for "check_dataset".
   '''
 
-  print('Not equal: {0:s}'.format(path))
+  print('!= {0:s}'.format(path))
   return False
 
 # ==================================================================================================
@@ -92,12 +92,12 @@ Check all datasets (without allowing for renamed datasets).
       # check missing dataset
       for path in GooseHDF5.getpaths(source):
         if path not in other:
-          print('Missing: {0:s}'.format(path))
+          print('-> {0:s}'.format(path))
 
       # check missing dataset
       for path in GooseHDF5.getpaths(other):
         if path not in source:
-          print('Extra: {0:s}'.format(path))
+          print('<- {0:s}'.format(path))
 
       # check values
       for path in GooseHDF5.getpaths(source):
@@ -129,12 +129,12 @@ renamed = [['source_name1', 'other_name1'], ['source_name2', 'other_name2'], ...
       # check missing dataset
       for _, path in s2o.items():
         if path not in o2s:
-          print('Missing: {0:s}'.format(path))
+          print('-> {0:s}'.format(path))
 
       # check missing dataset
       for _, path in o2s.items():
         if path not in s2o:
-          print('Extra: {0:s}'.format(path))
+          print('<- {0:s}'.format(path))
 
       # check values
       for path in s2o:
