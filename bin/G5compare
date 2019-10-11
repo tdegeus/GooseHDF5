@@ -30,23 +30,20 @@ import sys, os, re, h5py, docopt, GooseHDF5
 
 # ==================================================================================================
 
-def raise_error(msg):
-  print('Fatal error: ' + msg)
-  sys.exit(1)
-
-# ==================================================================================================
-
-def isfile(fname):
+def check_isfile(fname):
   r'''
-Check if a fail exists, quit otherwise.
+Check if a file exists, quit otherwise.
   '''
 
   if not os.path.isfile(fname):
-    raise_error('"{0:s}" does not exist'.format(fname))
+    raise IOError('"{0:s}" does not exist'.format(fname))
 
 # ==================================================================================================
 
 def not_equal(path):
+  r'''
+Support function for "check_dataset".
+  '''
 
   print('Not equal: {0:s}'.format(path))
   return False
@@ -54,33 +51,29 @@ def not_equal(path):
 # ==================================================================================================
 
 def check_dataset(path, a, b):
-
-  # --
+  r'''
+Check if the datasets (read outside) "a" and "b" are equal. If not print a message with the "path"
+to the screen and return "False".
+  '''
 
   if np.issubdtype(a.dtype, np.number) and np.issubdtype(b.dtype, np.number):
-
-    if not np.allclose(a, b):
+    if np.allclose(a, b):
+      return True
+    else:
       return not_equal(path)
-
-    return True
-
-  # --
 
   if a.size != b.size:
     return not_equal(path)
 
-  # --
-
   if a.size == 1:
-
-    if a[...] != b[...]:
+    if a[...] == b[...]:
+      return True
+    else:
       return not_equal(path)
 
+  if list(a) == list(b):
     return True
-
-  # --
-
-  if list(a) != list(b):
+  else:
     return not_equal(path)
 
   return True
@@ -88,6 +81,9 @@ def check_dataset(path, a, b):
 # ==================================================================================================
 
 def check_plain(source, other):
+  r'''
+Check all datasets (without allowing for renamed datasets).
+  '''
 
   with h5py.File(source, 'r') as source:
 
@@ -112,6 +108,8 @@ def check_plain(source, other):
 
 def check_renamed(source, other, renamed):
   r'''
+Check all datasets while allowing for renamed datasets.
+
 renamed = [['source_name1', 'other_name1'], ['source_name2', 'other_name2'], ...]
   '''
 
@@ -125,8 +123,6 @@ renamed = [['source_name1', 'other_name1'], ['source_name2', 'other_name2'], ...
 
       # rename
       for s, o in renamed:
-        if s not in s2o: raise_error('"{0:s}" not in {1:s}'.format(s, source.filename))
-        if o not in o2s: raise_error('"{0:s}" not in {1:s}'.format(o, other.filename))
         s2o[s] = o
         o2s[o] = s
 
@@ -151,8 +147,8 @@ renamed = [['source_name1', 'other_name1'], ['source_name2', 'other_name2'], ...
 args = docopt.docopt(__doc__,version='0.0.1')
 
 # check that file exists
-isfile(args['<source>'])
-isfile(args['<other>'])
+check_isfile(args['<source>'])
+check_isfile(args['<other>'])
 
 # check without accounting for renamed field
 if len(args['--renamed']) == 0:

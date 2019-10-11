@@ -30,9 +30,9 @@ import sys, os, re, h5py, docopt, GooseHDF5
 
 # ==================================================================================================
 
-def isfile(fname):
+def check_isfile(fname):
   r'''
-Check if a fail exists, quit otherwise.
+Check if a file exists, quit otherwise.
   '''
 
   if not os.path.isfile(fname):
@@ -41,55 +41,73 @@ Check if a fail exists, quit otherwise.
 
 # ==================================================================================================
 
+def print_plain(source, paths):
+  r'''
+Print the paths to all datasets (one per line)
+  '''
+
+  for path in paths:
+    print(path)
+
+# ==================================================================================================
+
+def print_info(source, paths):
+  r'''
+Print the paths to all datasets (one per line), including type information.
+  '''
+
+  out = {
+    'path'  : [],
+    'size'  : [],
+    'shape' : [],
+    'dtype' : [],
+  }
+
+  for path in paths:
+    if path in source:
+      data = source[path]
+      out['path' ] += [path]
+      out['size' ] += [str(data.size)]
+      out['shape'] += [str(data.shape)]
+      out['dtype'] += [str(data.dtype)]
+    else:
+      out['path' ] += [path]
+      out['size' ] += ['-']
+      out['shape'] += ['-']
+      out['dtype'] += ['-']
+
+  width = {}
+  for key in out:
+    width[key] = max([len(i) for i in out[key]])
+    width[key] = max(width[key], len(key))
+
+  fmt = '{0:%ds} {1:%ds} {2:%ds} {3:%ds}' % (width['path'], width['size'], width['shape'], width['dtype'])
+
+  print(fmt.format('path', 'size', 'shape', 'dtype'))
+  print(fmt.format('='*width['path'], '='*width['size'], '='*width['shape'], '='*width['dtype']))
+
+  for i in range(len(out['path'])):
+    print(fmt.format(out['path'][i], out['size'][i], out['shape'][i], out['dtype'][i]))
+
+# ==================================================================================================
+
 # parse command-line options
-args = docopt.docopt(__doc__,version='0.0.2')
+args = docopt.docopt(__doc__,version='0.0.3')
 
 # check that file exists
-isfile(args['<source>'])
+check_isfile(args['<source>'])
 
+# open file and read
 with h5py.File(args['<source>'], 'r') as source:
 
   # get iterator to data-sets
-  paths = GooseHDF5.getpaths(source, root=args['--root'], max_depth=args['--max-depth'], fold=args['--fold'])
+  paths = GooseHDF5.getpaths(source,
+    root      = args['--root'],
+    max_depth = args['--max-depth'],
+    fold      = args['--fold'])
 
-  # print without info
-  if not args['--info']:
-    for path in paths:
-      print(path)
-
-  # print with info
+  # print
   if args['--info']:
-
-    out = {
-      'path'  : [],
-      'size'  : [],
-      'shape' : [],
-      'dtype' : [],
-    }
-
-    for path in paths:
-      if path in source:
-        data = source[path]
-        out['path' ] += [path]
-        out['size' ] += [str(data.size)]
-        out['shape'] += [str(data.shape)]
-        out['dtype'] += [str(data.dtype)]
-      else:
-        out['path' ] += [path]
-        out['size' ] += ['-']
-        out['shape'] += ['-']
-        out['dtype'] += ['-']
-
-    width = {}
-    for key in out:
-      width[key] = max([len(i) for i in out[key]])
-      width[key] = max(width[key], len(key))
-
-    fmt = '{0:%ds} {1:%ds} {2:%ds} {3:%ds}' % (width['path'], width['size'], width['shape'], width['dtype'])
-
-    print(fmt.format('path', 'size', 'shape', 'dtype'))
-    print(fmt.format('='*width['path'], '='*width['size'], '='*width['shape'], '='*width['dtype']))
-
-    for i in range(len(out['path'])):
-      print(fmt.format(out['path'][i], out['size'][i], out['shape'][i], out['dtype'][i]))
-
+    print_info(source, paths)
+  else:
+    print_plain(source, paths)
