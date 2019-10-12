@@ -20,6 +20,7 @@ set(binaries
   "bin/G5select"
   "bin/G5find"
   "bin/G5check"
+  "bin/G5compare"
 )
 
 # version info

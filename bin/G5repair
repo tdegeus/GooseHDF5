@@ -28,94 +28,33 @@ import sys, os, re, h5py, docopt, GooseHDF5
 
 # ==================================================================================================
 
-def confirm(message='Proceed [y/n]?\n'):
+def check_isfile(fname):
   r'''
-Prompt user for confirmation. The function loops until the user responds with
-
-* 'y' -> True
-* 'n' -> False
-  '''
-
-  while True:
-
-    # - prompt message, get user's response
-    user = input(message)
-
-    # - check response
-    if not user                     : print('Please enter y or n.'); continue
-    if user not in ['y','Y','n','N']: print('Please enter y or n.'); continue
-    if user     in ['y','Y'        ]: return True
-    if user     in ['n','N'        ]: return False
-
-# ==================================================================================================
-
-def error(message):
-  r'''
-Print error message and quit.
-  '''
-
-  print(message)
-
-  sys.exit(1)
-
-# ==================================================================================================
-
-def quit(message):
-  r'''
-Prompt user for confirmation. If the response is negative this function quits the program.
-  '''
-
-  if not confirm(message):
-    sys.exit(1)
-
-# ==================================================================================================
-
-def isfile(fname):
-  r'''
-Check if a fail exists, quit otherwise.
+Check if a file exists, quit otherwise.
   '''
 
   if not os.path.isfile(fname):
-    error('"{0:s}" does not exist'.format(fname))
+    raise IOError('"{0:s}" does not exist'.format(fname))
 
 # ==================================================================================================
 
 # parse command-line options
-# --------------------------
-
 args = docopt.docopt(__doc__,version='0.0.2')
 
-# check files
-# -----------
+# check that file exists
+check_isfile(args['<source>'])
 
-# files that are required to exist
-isfile(args['<source>'])
-
-# check file existence of the destination
+# check to overwrite
 if os.path.isfile(args['<destination>']) and not args['--force']:
-  quit('File "{0:s}" already exists, continue [y/n]? '.format(args['<destination>']))
+  if not click.confirm('File "{0:s}" already exists, continue [y/n]? '.format(args['<destination>'])):
+    sys.exit(1)
 
-# get paths
-# ---------
+# read the 'damaged' file
+with h5py.File(args['<source>'], 'r') as source:
 
-# open HDF5-file
-source = h5py.File(args['<source>'], 'r')
+  # get paths that can be read
+  paths = GooseHDF5.verify(source, GooseHDF5.getdatasets(source))
 
-# get paths, that can be read
-paths = GooseHDF5.verify(source, GooseHDF5.getdatasets(source))
-
-# copy
-# ----
-
-# open HDF5-file
-dest = h5py.File(args['<destination>'], 'w')
-
-# copy datasets
-GooseHDF5.copydatasets(source, dest, paths)
-
-# finish
-# ------
-
-# close HDF5-files
-source.close()
-dest  .close()
+  # copy datasets
+  with h5py.File(args['<destination>'], 'w') as dest:
+    GooseHDF5.copydatasets(source, dest, paths)

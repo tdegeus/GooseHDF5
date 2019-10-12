@@ -203,4 +203,26 @@ G5find
 
   (takes directories ``id=000Q``, ``id=001Q``, ... and renames them to ``id=000C``, ``id=001C``, ...).
 
+G5compare
+---------
 
+[:download:`G5compare <../bin/G5compare>`]
+
+.. code-block:: none
+
+  G5compare
+    Compare two HDF5 files. If the function does not output anything all datasets are present in both
+    files, and all the content of the datasets is equals
+
+  Usage:
+    G5compare [options] [--renamed ARG]... <source> <other>
+
+  Arguments:
+    <source>    HDF5-file.
+    <other>     HDF5-file.
+
+  Options:
+    -r, --renamed=ARG     Renamed paths, separated by a separator (see below).
+    -s, --ifs=ARG         Separator used to separate renamed fields. [default: :]
+    -h, --help            Show help.
+        --version         Show version.

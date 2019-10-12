@@ -30,92 +30,30 @@ import sys, os, re, h5py, docopt, GooseHDF5
 
 # ==================================================================================================
 
-def confirm(message='Proceed [y/n]?\n'):
+def check_isfile(fname):
   r'''
-Prompt user for confirmation. The function loops until the user responds with
-
-* 'y' -> True
-* 'n' -> False
-  '''
-
-  while True:
-
-    # - prompt message, get user's response
-    user = input(message)
-
-    # - check response
-    if not user                     : print('Please enter y or n.'); continue
-    if user not in ['y','Y','n','N']: print('Please enter y or n.'); continue
-    if user     in ['y','Y'        ]: return True
-    if user     in ['n','N'        ]: return False
-
-# ==================================================================================================
-
-def error(message):
-  r'''
-Print error message and quit.
-  '''
-
-  print(message)
-
-  sys.exit(1)
-
-# ==================================================================================================
-
-def quit(message):
-  r'''
-Prompt user for confirmation. If the response is negative this function quits the program.
-  '''
-
-  if not confirm(message):
-    sys.exit(1)
-
-# ==================================================================================================
-
-def isfile(fname):
-  r'''
-Check if a fail exists, quit otherwise.
+Check if a file exists, quit otherwise.
   '''
 
   if not os.path.isfile(fname):
-    error('"{0:s}" does not exist'.format(fname))
+    raise IOError('"{0:s}" does not exist'.format(fname))
 
 # ==================================================================================================
 
-# parse command-line options
-# --------------------------
+def print_plain(source, paths):
+  r'''
+Print the paths to all datasets (one per line)
+  '''
 
-args = docopt.docopt(__doc__,version='0.0.2')
-
-# check files
-# -----------
-
-# files that are required to exist
-isfile(args['<source>'])
-
-# get paths
-# ---------
-
-# open file
-try:
-  source = h5py.File(args['<source>'], 'r')
-except:
-  print('Error reading "{0:s}"'.format(args['<source>']))
-  sys.exit(1)
-
-# get iterator to data-sets
-paths = GooseHDF5.getpaths(source, root=args['--root'], max_depth=args['--max-depth'], fold=args['--fold'])
-
-# print
-# -----
-
-# print without info
-if not args['--info']:
   for path in paths:
     print(path)
 
-# print with info
-if args['--info']:
+# ==================================================================================================
+
+def print_info(source, paths):
+  r'''
+Print the paths to all datasets (one per line), including type information.
+  '''
 
   out = {
     'path'  : [],
@@ -150,7 +88,25 @@ if args['--info']:
   for i in range(len(out['path'])):
     print(fmt.format(out['path'][i], out['size'][i], out['shape'][i], out['dtype'][i]))
 
-# close file
-# ----------
+# ==================================================================================================
 
-source.close()
+# parse command-line options
+args = docopt.docopt(__doc__,version='0.0.3')
+
+# check that file exists
+check_isfile(args['<source>'])
+
+# open file and read
+with h5py.File(args['<source>'], 'r') as source:
+
+  # get iterator to data-sets
+  paths = GooseHDF5.getpaths(source,
+    root      = args['--root'],
+    max_depth = args['--max-depth'],
+    fold      = args['--fold'])
+
+  # print
+  if args['--info']:
+    print_info(source, paths)
+  else:
+    print_plain(source, paths)
