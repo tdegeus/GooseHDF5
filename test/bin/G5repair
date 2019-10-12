@@ -23,18 +23,18 @@ with h5py.File('a.hdf5', 'w') as source:
 
 run("G5repair a.hdf5 b.hdf5")
 
-expected_ouput = sorted(['/foo', '/bar'])
+expected_output = sorted(['/foo', '/bar'])
 
 output = sorted(run("G5list b.hdf5"))
 
 os.remove('a.hdf5')
 os.remove('b.hdf5')
 
-if output != expected_ouput:
+if output != expected_output:
   print('output = ')
   print(output)
   print('expected output = ')
-  print(expected_ouput)
+  print(expected_output)
   raise IOError('Test failed')
 
 

@@ -22,15 +22,15 @@ with h5py.File('a.hdf5', 'w') as source:
 # run test
 # --------
 
-output = run("G5list a.hdf5")
+output = sorted(run("G5list a.hdf5"))
 
-expected_ouput = ['/a', '/b/a', '/b/b/a']
+expected_output = sorted(['/a', '/b/a', '/b/b/a'])
 
 os.remove('a.hdf5')
 
-if output != expected_ouput:
+if output != expected_output:
   print('output = ')
   print(output)
   print('expected output = ')
-  print(expected_ouput)
+  print(expected_output)
   raise IOError('Test failed')

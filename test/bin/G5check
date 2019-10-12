@@ -22,15 +22,15 @@ with h5py.File('a.hdf5', 'w') as source:
 
 output = run("G5check a.hdf5")
 
-expected_ouput = []
+expected_output = []
 
 os.remove('a.hdf5')
 
-if output != expected_ouput:
+if output != expected_output:
   print('output = ')
   print(output)
   print('expected output = ')
-  print(expected_ouput)
+  print(expected_output)
   raise IOError('Test failed')
 
 
