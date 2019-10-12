@@ -13,4 +13,4 @@ install:
   - pip install h5py numpy
 # command to run tests
 script:
-  - test/bin/main.py
+  - ./test/bin/main.py
