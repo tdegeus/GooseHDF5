@@ -24,9 +24,13 @@ with h5py.File('a.hdf5', 'w') as source:
 
 output = run("G5list a.hdf5")
 
+expected_ouput = ['/a', '/b/a', '/b/b/a']
+
 os.remove('a.hdf5')
 
-if output != ['/a', '/b/a', '/b/b/a']:
+if output != expected_ouput:
+  print('output = ')
+  print(output)
+  print('expected output = ')
+  print(expected_ouput)
   raise IOError('Test failed')
-
-

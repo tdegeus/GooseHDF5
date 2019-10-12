@@ -59,10 +59,16 @@ with h5py.File('a.hdf5', 'w') as source:
 
 output = run("G5compare a.hdf5 b.hdf5 -r '/d/equal:/e/equal'")
 
+expected_ouput = ['!= /a/not_equal', '!= /b/not_equal', '!= /c/not_equal']
+
 os.remove('a.hdf5')
 os.remove('b.hdf5')
 
-if output != ['!= /a/not_equal', '!= /b/not_equal', '!= /c/not_equal']:
+if output != expected_ouput:
+  print('output = ')
+  print(output)
+  print('expected output = ')
+  print(expected_ouput)
   raise IOError('Test failed')
 
 

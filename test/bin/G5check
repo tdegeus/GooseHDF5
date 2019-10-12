@@ -22,9 +22,18 @@ with h5py.File('a.hdf5', 'w') as source:
 
 output = run("G5check a.hdf5")
 
+expected_ouput = []
+
 os.remove('a.hdf5')
 
-if output != []:
+if output != expected_ouput:
+  print('output = ')
+  print(output)
+  print('expected output = ')
+  print(expected_ouput)
   raise IOError('Test failed')
+
+
+
 
 
