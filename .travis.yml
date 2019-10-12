@@ -6,7 +6,7 @@ python:
   - "3.7"
 # command to install dependencies
 install:
-  - pip install h5py numpy
+  - pip install h5py numpy docopt
   - pip install .
   - export PATH="${PWD}"/bin:"${PATH}"
   - chmod +x ./test/pytest

@@ -4,6 +4,10 @@ import os
 
 path = os.path.dirname(os.path.abspath(__file__))
 
+print(path)
+print(os.path.join(path, "bin/G5check.py"))
+print(open(os.path.join(path, "bin/G5check.py")).read())
+
 exec(open(os.path.join(path, "bin/G5check.py")).read())
 exec(open(os.path.join(path, "bin/G5compare.py")).read())
 exec(open(os.path.join(path, "bin/G5list.py")).read())
