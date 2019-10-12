@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import subprocess
 import os
 import h5py
@@ -15,16 +13,20 @@ def run(cmd):
 # -----------
 
 with h5py.File('a.hdf5', 'w') as source:
-  source['/a'] = np.random.random(25)
+  source['/foo'] = np.random.random(25)
+  source['/bar'] = np.random.random(25)
 
 # run test
 # --------
 
-output = run("G5check a.hdf5")
+run("G5repair a.hdf5 b.hdf5")
 
-expected_output = []
+expected_output = sorted(['/foo', '/bar'])
+
+output = sorted(run("G5list b.hdf5"))
 
 os.remove('a.hdf5')
+os.remove('b.hdf5')
 
 if output != expected_output:
   print('output = ')
@@ -32,8 +34,5 @@ if output != expected_output:
   print('expected output = ')
   print(expected_output)
   raise IOError('Test failed')
-
-
-
 
 
