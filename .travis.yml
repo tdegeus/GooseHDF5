@@ -11,8 +11,8 @@ install:
   - export PATH="${PWD}"/bin:"${PATH}"
 # command to run tests
 script:
-  - python test/bin/G5check
-  - python test/bin/G5compare
-  - python test/bin/G5list
-  - python test/bin/G5repair
+  - python test/bin/G5check.py
+  - python test/bin/G5compare.py
+  - python test/bin/G5list.py
+  - python test/bin/G5repair.py
 
