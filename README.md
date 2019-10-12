@@ -1,3 +1,5 @@
+[![Travis](https://travis-ci.com/tdegeus/GooseHDF5.svg?branch=master)](https://travis-ci.com/tdegeus/GooseHDF5)
+
 [![Documentation Status](https://readthedocs.org/projects/goosehdf5/badge/?version=latest)](http://goosehdf5.readthedocs.io/en/latest/?badge=latest)
 
 # GooseHDF5
