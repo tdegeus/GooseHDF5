@@ -7,7 +7,9 @@ python:
 # command to install dependencies
 install:
   - pip install h5py numpy
-  - chmod +x ./test/bin/pytest
+  - pip install .
+  - export PATH="${PWD}"/bin:"${PATH}"
+  - chmod +x ./test/pytest
 # command to run tests
 script:
-  - ./test/bin/pytest
+  - ./test/pytest

@@ -18,7 +18,7 @@ with h5py.File('a.hdf5', 'w') as source:
 # run test
 # --------
 
-output = run("../../bin/G5check a.hdf5")
+output = run("G5check a.hdf5")
 
 os.remove('a.hdf5')
 

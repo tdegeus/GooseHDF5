@@ -55,7 +55,7 @@ with h5py.File('a.hdf5', 'w') as source:
 # run test
 # --------
 
-output = run("../../bin/G5compare a.hdf5 b.hdf5 -r '/d/equal:/e/equal'")
+output = run("G5compare a.hdf5 b.hdf5 -r '/d/equal:/e/equal'")
 
 os.remove('a.hdf5')
 os.remove('b.hdf5')

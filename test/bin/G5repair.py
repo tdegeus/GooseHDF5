@@ -13,18 +13,20 @@ def run(cmd):
 # -----------
 
 with h5py.File('a.hdf5', 'w') as source:
-  source['/a'] = np.random.random(25)
-  source['/b/a'] = np.random.random(25)
-  source['/b/b/a'] = np.random.random(25)
+  source['/foo'] = np.random.random(25)
+  source['/bar'] = np.random.random(25)
 
 # run test
 # --------
 
-output = run("../../bin/G5list a.hdf5")
+run("G5repair a.hdf5 b.hdf5")
+
+output = run("G5list b.hdf5")
 
 os.remove('a.hdf5')
+os.remove('b.hdf5')
 
-if output != ['/a', '/b/a', '/b/b/a']:
+if sorted(output) != sorted(['/foo', '/bar']):
   raise IOError('Test failed')
 
 
