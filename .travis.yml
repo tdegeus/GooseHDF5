@@ -9,7 +9,16 @@ install:
   - pip install h5py numpy docopt
   - pip install .
   - export PATH="${PWD}"/bin:"${PATH}"
-  - chmod +x ./test/pytest
+  - chmod +x ./test/bin/G5check
+  - chmod +x ./test/bin/G5compare
+  - chmod +x ./test/bin/G5list
+  - chmod +x ./test/bin/G5repair
 # command to run tests
 script:
-  - ./test/pytest
+  - cd test/bin
+  - ./G5check
+  - ./G5compare
+  - ./G5list
+  - ./G5repair
+  - cd ../..
+
