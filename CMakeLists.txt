@@ -16,9 +16,6 @@ project(GooseHDF5)
 set(binaries
   "bin/G5list"
   "bin/G5repair"
-  "bin/G5merge"
-  "bin/G5select"
-  "bin/G5find"
   "bin/G5check"
   "bin/G5compare"
 )
