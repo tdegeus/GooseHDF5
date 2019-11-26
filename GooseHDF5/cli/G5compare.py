@@ -26,7 +26,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import numpy as np
-import sys, os, re, h5py, docopt, GooseHDF5
+import sys
+import os
+import re
+import h5py
+import docopt
+
+from .. import *
 
 # ==================================================================================================
 
@@ -90,17 +96,17 @@ Check all datasets (without allowing for renamed datasets).
     with h5py.File(other_name, 'r') as other:
 
       # check missing dataset
-      for path in GooseHDF5.getpaths(source):
+      for path in getpaths(source):
         if path not in other:
           print('-> {0:s}'.format(path))
 
       # check missing dataset
-      for path in GooseHDF5.getpaths(other):
+      for path in getpaths(other):
         if path not in source:
           print('<- {0:s}'.format(path))
 
       # check values
-      for path in GooseHDF5.getpaths(source):
+      for path in getpaths(source):
         if path in other:
           check_dataset(path, source[path][...], other[path][...])
 
@@ -118,8 +124,8 @@ renamed = [['source_name1', 'other_name1'], ['source_name2', 'other_name2'], ...
     with h5py.File(other, 'r') as other:
 
       # get list of all datasets
-      s2o = {i:i for i in list(GooseHDF5.getpaths(source))}
-      o2s = {i:i for i in list(GooseHDF5.getpaths(other))}
+      s2o = {i:i for i in list(getpaths(source))}
+      o2s = {i:i for i in list(getpaths(other))}
 
       # rename
       for s, o in renamed:
@@ -143,22 +149,22 @@ renamed = [['source_name1', 'other_name1'], ['source_name2', 'other_name2'], ...
 
 # ==================================================================================================
 
-# parse command-line options
-args = docopt.docopt(__doc__,version='0.0.1')
+def main():
 
-# check that file exists
-check_isfile(args['<source>'])
-check_isfile(args['<other>'])
+  # parse command-line options
+  args = docopt.docopt(__doc__,version='0.0.1')
 
-# check without accounting for renamed field
-if len(args['--renamed']) == 0:
-  check_plain(args['<source>'], args['<other>'])
-  sys.exit(0)
+  # check that file exists
+  check_isfile(args['<source>'])
+  check_isfile(args['<other>'])
 
-# unpack renaming
-renamed = [i.split(args['--ifs']) for i in args['--renamed']]
+  # check without accounting for renamed field
+  if len(args['--renamed']) == 0:
+    check_plain(args['<source>'], args['<other>'])
+    sys.exit(0)
 
-# check with accounting for renamed field
-check_renamed(args['<source>'], args['<other>'], renamed)
+  # unpack renaming
+  renamed = [i.split(args['--ifs']) for i in args['--renamed']]
 
-
+  # check with accounting for renamed field
+  check_renamed(args['<source>'], args['<other>'], renamed)

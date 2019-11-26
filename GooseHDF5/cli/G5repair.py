@@ -19,12 +19,17 @@ Options:
 
 # ==================================================================================================
 
-# temporary fix: suppress warning from h5py
 import warnings
 warnings.filterwarnings("ignore")
 
 import numpy as np
-import sys, os, re, h5py, docopt, GooseHDF5
+import sys
+import os
+import re
+import h5py
+import docopt
+
+from .. import *
 
 # ==================================================================================================
 
@@ -38,23 +43,25 @@ Check if a file exists, quit otherwise.
 
 # ==================================================================================================
 
-# parse command-line options
-args = docopt.docopt(__doc__,version='0.0.2')
+def main():
 
-# check that file exists
-check_isfile(args['<source>'])
+  # parse command-line options
+  args = docopt.docopt(__doc__,version='0.0.2')
 
-# check to overwrite
-if os.path.isfile(args['<destination>']) and not args['--force']:
-  if not click.confirm('File "{0:s}" already exists, continue [y/n]? '.format(args['<destination>'])):
-    sys.exit(1)
+  # check that file exists
+  check_isfile(args['<source>'])
 
-# read the 'damaged' file
-with h5py.File(args['<source>'], 'r') as source:
+  # check to overwrite
+  if os.path.isfile(args['<destination>']) and not args['--force']:
+    if not click.confirm('File "{0:s}" already exists, continue [y/n]? '.format(args['<destination>'])):
+      sys.exit(1)
 
-  # get paths that can be read
-  paths = GooseHDF5.verify(source, GooseHDF5.getdatasets(source))
+  # read the 'damaged' file
+  with h5py.File(args['<source>'], 'r') as source:
 
-  # copy datasets
-  with h5py.File(args['<destination>'], 'w') as dest:
-    GooseHDF5.copydatasets(source, dest, paths)
+    # get paths that can be read
+    paths = GooseHDF5.verify(source, GooseHDF5.getdatasets(source))
+
+    # copy datasets
+    with h5py.File(args['<destination>'], 'w') as dest:
+      GooseHDF5.copydatasets(source, dest, paths)
