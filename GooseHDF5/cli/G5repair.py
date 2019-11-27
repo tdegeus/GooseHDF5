@@ -34,6 +34,7 @@ __version__ = pkg_resources.require("GooseHDF5")[0].version
 
 from .. import verify
 from .. import copydatasets
+from .. import getdatasets
 
 # ==================================================================================================
 
