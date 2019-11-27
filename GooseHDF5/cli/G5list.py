@@ -34,7 +34,7 @@ import pkg_resources
 
 __version__ = pkg_resources.require("GooseHDF5")[0].version
 
-from .. import *
+from .. import getpaths
 
 # ==================================================================================================
 
