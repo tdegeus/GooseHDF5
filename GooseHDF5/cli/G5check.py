@@ -24,7 +24,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import numpy as np
-import sys, os, re, h5py, docopt, GooseHDF5
+import sys
+import os
+import re
+import h5py
+import docopt
+
+from .. import *
 
 # ==================================================================================================
 
@@ -38,28 +44,32 @@ Check if a file exists, quit otherwise.
 
 # ==================================================================================================
 
-def read(filename, verify):
+def read(filename, check):
   r'''
-Read (and verify) all datasets
+Read (and check) all datasets
   '''
 
   with h5py.File(filename, 'r') as source:
 
-    paths = list(GooseHDF5.getdatasets(source))
+    paths = getdatasets(source)
 
-    if verify:
-      GooseHDF5.verify(source, paths, error=True)
+    if check:
+      verify(source, paths, error=True)
 
 # ==================================================================================================
 
-# parse command-line options
-args = docopt.docopt(__doc__,version='0.0.2')
+def main():
 
-# check that file exists
-check_isfile(args['<source>'])
+  # parse command-line options
+  args = docopt.docopt(__doc__,version='0.0.2')
 
-# read datasets
-try:
+  # check that file exists
+  check_isfile(args['<source>'])
+
   read(args['<source>'], not args['--basic'])
-except:
-  print(args['<source>'])
+
+  # read datasets
+  try:
+    read(args['<source>'], not args['--basic'])
+  except:
+    print(args['<source>'])

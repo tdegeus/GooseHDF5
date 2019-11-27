@@ -1,15 +1,14 @@
 language: python
+
 python:
   - "3.4"
   - "3.5"
   - "3.6"
   - "3.7"
-# command to install dependencies
+
 install:
-  - pip install h5py numpy docopt
-  - pip install .
-  - export PATH="${PWD}"/bin:"${PATH}"
-# command to run tests
+  - python -m pip install .
+
 script:
   - python test/bin/G5check.py
   - python test/bin/G5compare.py

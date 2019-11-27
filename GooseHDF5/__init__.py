@@ -1,7 +1,9 @@
 import warnings
 warnings.filterwarnings("ignore")
 
-import os, re, h5py
+import os
+import re
+import h5py
 
 # ==================================================================================================
 
@@ -343,8 +345,10 @@ successfully opened.
     try:
       tmp = data[path][...]
     except:
-      if error: raise IOError('Error reading "{path:s}"'.format(path=path))
-      else    : continue
+      if error:
+        raise IOError('Error reading "{path:s}"'.format(path=path))
+      else:
+        continue
 
     # - add to output
     out += [path]

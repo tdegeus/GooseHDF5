@@ -21,12 +21,17 @@ Options:
 
 # ==================================================================================================
 
-# temporary fix: suppress warning from h5py
 import warnings
 warnings.filterwarnings("ignore")
 
 import numpy as np
-import sys, os, re, h5py, docopt, GooseHDF5
+import sys
+import os
+import re
+import h5py
+import docopt
+
+from .. import *
 
 # ==================================================================================================
 
@@ -90,23 +95,25 @@ Print the paths to all datasets (one per line), including type information.
 
 # ==================================================================================================
 
-# parse command-line options
-args = docopt.docopt(__doc__,version='0.0.3')
+def main():
 
-# check that file exists
-check_isfile(args['<source>'])
+  # parse command-line options
+  args = docopt.docopt(__doc__,version='0.0.3')
 
-# open file and read
-with h5py.File(args['<source>'], 'r') as source:
+  # check that file exists
+  check_isfile(args['<source>'])
 
-  # get iterator to data-sets
-  paths = GooseHDF5.getpaths(source,
-    root      = args['--root'],
-    max_depth = args['--max-depth'],
-    fold      = args['--fold'])
+  # open file and read
+  with h5py.File(args['<source>'], 'r') as source:
 
-  # print
-  if args['--info']:
-    print_info(source, paths)
-  else:
-    print_plain(source, paths)
+    # get iterator to data-sets
+    paths = getpaths(source,
+      root      = args['--root'],
+      max_depth = args['--max-depth'],
+      fold      = args['--fold'])
+
+    # print
+    if args['--info']:
+      print_info(source, paths)
+    else:
+      print_plain(source, paths)
