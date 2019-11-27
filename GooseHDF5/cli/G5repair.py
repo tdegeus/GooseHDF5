@@ -60,8 +60,8 @@ def main():
   with h5py.File(args['<source>'], 'r') as source:
 
     # get paths that can be read
-    paths = GooseHDF5.verify(source, GooseHDF5.getdatasets(source))
+    paths = verify(source, getdatasets(source))
 
     # copy datasets
     with h5py.File(args['<destination>'], 'w') as dest:
-      GooseHDF5.copydatasets(source, dest, paths)
+      copydatasets(source, dest, paths)

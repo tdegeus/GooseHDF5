@@ -44,16 +44,16 @@ Check if a file exists, quit otherwise.
 
 # ==================================================================================================
 
-def read(filename, verify):
+def read(filename, check):
   r'''
-Read (and verify) all datasets
+Read (and check) all datasets
   '''
 
   with h5py.File(filename, 'r') as source:
 
-    paths = list(getdatasets(source))
+    paths = getdatasets(source)
 
-    if verify:
+    if check:
       verify(source, paths, error=True)
 
 # ==================================================================================================
@@ -65,6 +65,8 @@ def main():
 
   # check that file exists
   check_isfile(args['<source>'])
+
+  read(args['<source>'], not args['--basic'])
 
   # read datasets
   try:
