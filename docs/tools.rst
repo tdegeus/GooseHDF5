@@ -5,14 +5,6 @@
 Command-line tools
 ******************
 
-.. note::
-
-  These tools use Python an depend ``GooseHDF5``, ``h5py``, and ``docopt``. Get these tools for example using
-
-  .. code-block:: bash
-
-    pip3 install h5py doctopt GooseHDF5
-
 G5check
 -------
 
