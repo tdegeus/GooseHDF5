@@ -30,6 +30,9 @@ import os
 import re
 import h5py
 import docopt
+import pkg_resources
+
+__version__ = pkg_resources.require("GooseHDF5")[0].version
 
 from .. import *
 
@@ -98,7 +101,7 @@ Print the paths to all datasets (one per line), including type information.
 def main():
 
   # parse command-line options
-  args = docopt.docopt(__doc__,version='0.0.3')
+  args = docopt.docopt(__doc__, version=__version__)
 
   # check that file exists
   check_isfile(args['<source>'])
