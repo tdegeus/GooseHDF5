@@ -2,9 +2,14 @@
 from setuptools import setup
 from setuptools import find_packages
 
+import re
+
+filepath = 'GooseHDF5/__init__.py'
+__version__ = re.findall(r'__version__ = \'(.*)\'', open(filepath).read())[0]
+
 setup(
      name = 'GooseHDF5',
-     version = '0.1.1',
+     version = __version__,
      license = 'MIT',
      author = 'Tom de Geus',
      author_email = 'tom@geus.me',

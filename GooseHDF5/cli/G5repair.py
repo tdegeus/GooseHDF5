@@ -28,10 +28,8 @@ import os
 import re
 import h5py
 import docopt
-import pkg_resources
 
-__version__ = pkg_resources.require("GooseHDF5")[0].version
-
+from .. import __version__
 from .. import verify
 from .. import copydatasets
 from .. import getdatasets
