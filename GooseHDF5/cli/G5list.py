@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 '''G5list
   List datasets (or groups of datasets) in a HDF5-file.
 

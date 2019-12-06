@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 '''G5compare
   Compare two HDF5 files. If the function does not output anything all datasets are present in both
   files, and all the content of the datasets is equals

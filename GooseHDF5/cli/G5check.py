@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 '''G5check
   Try reading datasets. In case of reading failure the path is printed (otherwise nothing is
   printed).
