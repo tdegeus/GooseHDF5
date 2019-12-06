@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 '''G5repair
   Extract readable data from a HDF5-file and copy it to a new HDF5-file.
 
@@ -22,10 +21,8 @@ Options:
 import warnings
 warnings.filterwarnings("ignore")
 
-import numpy as np
 import sys
 import os
-import re
 import h5py
 import docopt
 
@@ -34,37 +31,32 @@ from .. import verify
 from .. import copydatasets
 from .. import getdatasets
 
-# ==================================================================================================
+# --------------------------------------------------------------------------------------------------
+# Check if a file exists, quit otherwise.
+# --------------------------------------------------------------------------------------------------
 
 def check_isfile(fname):
-  r'''
-Check if a file exists, quit otherwise.
-  '''
 
-  if not os.path.isfile(fname):
-    raise IOError('"{0:s}" does not exist'.format(fname))
+    if not os.path.isfile(fname):
+        raise IOError('"{0:s}" does not exist'.format(fname))
 
-# ==================================================================================================
+# --------------------------------------------------------------------------------------------------
+# Main function
+# --------------------------------------------------------------------------------------------------
 
 def main():
 
-  # parse command-line options
-  args = docopt.docopt(__doc__, version=__version__)
+    args = docopt.docopt(__doc__, version=__version__)
 
-  # check that file exists
-  check_isfile(args['<source>'])
+    check_isfile(args['<source>'])
 
-  # check to overwrite
-  if os.path.isfile(args['<destination>']) and not args['--force']:
-    if not click.confirm('File "{0:s}" already exists, continue [y/n]? '.format(args['<destination>'])):
-      sys.exit(1)
+    if os.path.isfile(args['<destination>']) and not args['--force']:
+        if not click.confirm('File "{0:s}" exists, continue [y/n]? '.format(args['<destination>'])):
+            sys.exit(1)
 
-  # read the 'damaged' file
-  with h5py.File(args['<source>'], 'r') as source:
+    with h5py.File(args['<source>'], 'r') as source:
 
-    # get paths that can be read
-    paths = verify(source, getdatasets(source))
+        paths = verify(source, getdatasets(source))
 
-    # copy datasets
-    with h5py.File(args['<destination>'], 'w') as dest:
-      copydatasets(source, dest, paths)
+        with h5py.File(args['<destination>'], 'w') as dest:
+            copydatasets(source, dest, paths)

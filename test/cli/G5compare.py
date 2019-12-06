@@ -7,7 +7,8 @@ import numpy as np
 # ----------------
 
 def run(cmd):
-  return list(filter(None, subprocess.check_output(cmd,shell=True).decode('utf-8').split('\n')))
+  out = list(filter(None, subprocess.check_output(cmd,shell=True).decode('utf-8').split('\n')))
+  return [i.rstrip() for i in out]
 
 # create file
 # -----------
@@ -55,7 +56,7 @@ with h5py.File('a.hdf5', 'w') as source:
 # run test
 # --------
 
-output = sorted(run("G5compare a.hdf5 b.hdf5 -r '/d/equal:/e/equal'"))
+output = sorted(run("G5compare a.hdf5 b.hdf5 -r /d/equal:/e/equal"))
 
 expected_output = sorted(['!= /a/not_equal', '!= /b/not_equal', '!= /c/not_equal'])
 
