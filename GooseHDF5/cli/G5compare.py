@@ -111,8 +111,13 @@ def check_plain(source_name, other_name):
 
 def _check_renamed(source, other, renamed):
 
+    print(renamed)
+
     s2o = {i:i for i in list(getpaths(source))}
     o2s = {i:i for i in list(getpaths(other))}
+
+    print(s2o)
+    print(o2s)
 
     for s, o in renamed:
         s2o[s] = o
@@ -153,5 +158,7 @@ def main():
         sys.exit(0)
 
     renamed = [i.split(args['--ifs']) for i in args['--renamed']]
+
+    print(renamed)
 
     check_renamed(args['<source>'], args['<other>'], renamed)
