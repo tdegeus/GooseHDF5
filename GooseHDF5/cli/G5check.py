@@ -18,14 +18,10 @@ Options:
 
 # ==================================================================================================
 
-# temporary fix: suppress warning from h5py
 import warnings
 warnings.filterwarnings("ignore")
 
-import numpy as np
-import sys
 import os
-import re
 import h5py
 import docopt
 
@@ -33,44 +29,41 @@ from .. import __version__
 from .. import getdatasets
 from .. import verify
 
-# ==================================================================================================
+# --------------------------------------------------------------------------------------------------
+# Check if a file exists, quit otherwise.
+# --------------------------------------------------------------------------------------------------
 
 def check_isfile(fname):
-  r'''
-Check if a file exists, quit otherwise.
-  '''
 
-  if not os.path.isfile(fname):
-    raise IOError('"{0:s}" does not exist'.format(fname))
+    if not os.path.isfile(fname):
+        raise IOError('"{0:s}" does not exist'.format(fname))
 
-# ==================================================================================================
+# --------------------------------------------------------------------------------------------------
+# Read (and check) all datasets
+# --------------------------------------------------------------------------------------------------
 
 def read(filename, check):
-  r'''
-Read (and check) all datasets
-  '''
 
-  with h5py.File(filename, 'r') as source:
+    with h5py.File(filename, 'r') as source:
 
-    paths = getdatasets(source)
+        paths = getdatasets(source)
 
-    if check:
-      verify(source, paths, error=True)
+        if check:
+            verify(source, paths, error=True)
 
-# ==================================================================================================
+# --------------------------------------------------------------------------------------------------
+# Main function
+# --------------------------------------------------------------------------------------------------
 
 def main():
 
-  # parse command-line options
-  args = docopt.docopt(__doc__, version=__version__)
+    args = docopt.docopt(__doc__, version=__version__)
 
-  # check that file exists
-  check_isfile(args['<source>'])
+    check_isfile(args['<source>'])
 
-  read(args['<source>'], not args['--basic'])
-
-  # read datasets
-  try:
     read(args['<source>'], not args['--basic'])
-  except:
-    print(args['<source>'])
+
+    try:
+        read(args['<source>'], not args['--basic'])
+    except:
+        print(args['<source>'])
