@@ -78,7 +78,7 @@ def print_info(source, paths):
         width[key] = max([len(i) for i in out[key]])
         width[key] = max(width[key], len(key))
 
-    fmt = '{0:%ds} {1:%ds} {2:%ds} {3:%ds}' %
+    fmt = '{0:%ds} {1:%ds} {2:%ds} {3:%ds}' % \
         (width['path'], width['size'], width['shape'], width['dtype'])
 
     print(fmt.format('path', 'size', 'shape', 'dtype'))

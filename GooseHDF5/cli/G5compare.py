@@ -48,8 +48,7 @@ def check_isfile(fname):
 def not_equal(path):
 
     print('!= {0:s}'.format(path))
-        return False
-
+    return False
 
 # --------------------------------------------------------------------------------------------------
 # Check if the datasets (read outside) "a" and "b" are equal. If not print a message with the "path"
@@ -134,8 +133,8 @@ def _check_renamed(source, other, renamed):
 # --------------------------------------------------------------------------------------------------
 
 def check_renamed(source_name, other_name, renamed):
-    with h5py.File(source, 'r') as source_name:
-        with h5py.File(other, 'r') as other_name:
+    with h5py.File(source_name, 'r') as source:
+        with h5py.File(other_name, 'r') as other:
             _check_renamed(source, other, renamed)
 
 # --------------------------------------------------------------------------------------------------
