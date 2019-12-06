@@ -7,7 +7,8 @@ import numpy as np
 # ----------------
 
 def run(cmd):
-  return list(filter(None, subprocess.check_output(cmd,shell=True).decode('utf-8').split('\n')))
+  out = list(filter(None, subprocess.check_output(cmd,shell=True).decode('utf-8').split('\n')))
+  return [i.rstrip() for i in out]
 
 # create file
 # -----------
