@@ -111,13 +111,8 @@ def check_plain(source_name, other_name):
 
 def _check_renamed(source, other, renamed):
 
-    print(renamed)
-
     s2o = {i:i for i in list(getpaths(source))}
     o2s = {i:i for i in list(getpaths(other))}
-
-    print(s2o)
-    print(o2s)
 
     for s, o in renamed:
         s2o[s] = o
@@ -131,9 +126,9 @@ def _check_renamed(source, other, renamed):
         if path not in s2o:
             print('<- {0:s}'.format(path))
 
-    for path in s2o:
-        if s2o[path] in o2s:
-            check_dataset(path, source[path][...], other[s2o[path]][...])
+    for new_path, path in s2o.items():
+        if new_path in o2s:
+            check_dataset(path, source[path][...], other[new_path][...])
 
 # --------------------------------------------------------------------------------------------------
 
@@ -160,5 +155,4 @@ def main():
     renamed = [i.split(args['--ifs']) for i in args['--renamed']]
 
     print(renamed)
-
-    check_renamed(args['<source>'], args['<other>'], renamed)
+    # check_renamed(args['<source>'], args['<other>'], renamed)
