@@ -154,5 +154,4 @@ def main():
 
     renamed = [i.split(args['--ifs']) for i in args['--renamed']]
 
-    print(renamed)
-    # check_renamed(args['<source>'], args['<other>'], renamed)
+    check_renamed(args['<source>'], args['<other>'], renamed)
