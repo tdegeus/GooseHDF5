@@ -21,6 +21,7 @@ Iterators
 
   GooseHDF5.getdatasets
   GooseHDF5.getpaths
+  GooseHDF5.filter_datasets
   GooseHDF5.copydatasets
 
 Verify
@@ -32,6 +33,8 @@ Verify
   GooseHDF5.exists
   GooseHDF5.exists_any
   GooseHDF5.exists_all
+  GooseHDF5.equal
+  GooseHDF5.allequal
 
 Documentation
 =============
