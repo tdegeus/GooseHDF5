@@ -1,11 +1,9 @@
 import warnings
 warnings.filterwarnings("ignore")
 
-import posixpath
-import re
 import h5py
 
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 
 # ==================================================================================================
 
@@ -13,6 +11,8 @@ def abspath(path):
     r'''
 Return absolute path.
     '''
+
+    import posixpath
 
     return posixpath.normpath(posixpath.join('/', path))
 
@@ -23,10 +23,20 @@ def join(*args, root=False):
 Join path components.
     '''
 
-    if root:
-        return posixpath.join('/', *args)
+    import posixpath
 
-    return posixpath.join(*args)
+    lst = []
+
+    for i, arg in enumerate(args):
+        if i == 0:
+            lst += [arg]
+        else:
+            lst += [arg.strip('/')]
+
+    if root:
+        return posixpath.join('/', *lst)
+
+    return posixpath.join(*lst)
 
 # ==================================================================================================
 
@@ -36,19 +46,17 @@ Iterator to transverse all datasets across all groups in HDF5 file. Usage:
 
 .. code-block:: python
 
-    data = h5py.File('...', 'r')
+    with h5py.File('...', 'r') as data:
 
-    # loop over all paths
-    for path in GooseHDF5.getdatasets(data):
-      print(path)
+        # loop over all paths
+        for path in GooseHDF5.getdatasets(data):
+            print(path)
 
-    # get a set of all datasets
-    paths = set(GooseHDF5.getdatasets(data))
+        # get a set of all datasets
+        paths = set(GooseHDF5.getdatasets(data))
 
-    # get a list of all datasets
-    paths = list(GooseHDF5.getdatasets(data))
-
-    data.close()
+        # get a list of all datasets
+        paths = list(GooseHDF5.getdatasets(data))
 
 Read more in `this answer <https://stackoverflow.com/a/50720736/2646505>`_.
 
@@ -136,10 +144,10 @@ Iterator to transverse all datasets across all groups in HDF5 file. Whereby one 
 
     .. code-block:: python
 
-        data = h5py.File('...', 'r')
+        with h5py.File('...', 'r') as data:
 
-        for path in GooseHDF5.getpaths(data, max_depth=2, fold='/data'):
-            print(path)
+            for path in GooseHDF5.getpaths(data, max_depth=2, fold='/data'):
+                print(path)
 
     Will print:
 
@@ -149,8 +157,9 @@ Iterator to transverse all datasets across all groups in HDF5 file. Whereby one 
         /data/...
         /e
 
-    The ``...`` indicate it concerns a folded group, not a dataset. The first group was folded because
-    of the maximum depth, and the second because if was specifically requested to be folded.
+    The ``...`` indicate that it concerns a folded group, not a dataset.
+    Here, the first group was folded because of the maximum depth, and the second because it was
+    specifically requested to be folded.
     '''
 
     if max_depth and fold:
@@ -317,6 +326,29 @@ Specialization for ``getpaths`` such that:
 
 # ==================================================================================================
 
+def filter_datasets(data, paths):
+    r'''
+From a list of paths filter those paths that do not point to datasets.
+
+This function can for example be used in conjunction with "getpaths":
+
+.. code-block:: python
+
+    with h5py.File('...', 'r') as data:
+
+        datasets = GooseHDF5.filter_datasets(data,
+            GooseHDF5.getpaths(data, max_depth=2, fold='/data'))
+    '''
+
+    import re
+
+    paths = list(paths)
+    paths = [path for path in paths if not re.match(r'(.*)(/\.\.\.)', path)]
+    paths = [path for path in paths if isinstance(data[path], h5py.Dataset)]
+    return paths
+
+# ==================================================================================================
+
 def verify(data, datasets, error=False):
     r'''
 Try reading each dataset of a list of datasets. Return a list with only those datasets that can be
@@ -394,13 +426,15 @@ can be renamed by specifying a list of 'dest_datasets' (whose entries should cor
 In addition a 'root' (path prefix) for the destination datasets name can be specified.
     '''
 
+    import posixpath
+
     source_datasets = [abspath(path) for path in source_datasets]
 
     if not dest_datasets:
         dest_datasets = [path for path in source_datasets]
 
     if root:
-        dest_datasets = [join(path, root=True) for path in dest_datasets]
+        dest_datasets = [join(root, path, root=True) for path in dest_datasets]
 
     for dest_path in dest_datasets:
         if exists(dest, dest_path):
@@ -420,3 +454,68 @@ In addition a 'root' (path prefix) for the destination datasets name can be spec
     for source_path, dest_path in zip(source_datasets, dest_datasets):
         group = posixpath.split(dest_path)[0]
         source.copy(source_path, dest[group], posixpath.split(dest_path)[1])
+
+# ==================================================================================================
+
+def _equal(a, b):
+
+    import numpy as np
+
+    if isinstance(a, h5py.Group) and isinstance(b, h5py.Group):
+        return True
+
+    if not isinstance(a, h5py.Dataset) or not isinstance(b, h5py.Dataset):
+        raise IOError('Not a Dataset')
+
+    if np.issubdtype(a.dtype, np.number) and np.issubdtype(b.dtype, np.number):
+        if np.allclose(a, b):
+            return True
+        else:
+            return False
+
+    if a.size != b.size:
+        return False
+
+    if a.size == 1:
+        if a[...] == b[...]:
+            return True
+        else:
+            return False
+
+    if list(a) == list(b):
+        return True
+    else:
+        return False
+
+    return True
+
+# --------------------------------------------------------------------------------------------------
+
+def equal(source, dest, source_dataset, dest_dataset=None):
+
+    if not dest_dataset:
+        dest_dataset = source_dataset
+
+    if source_dataset not in source:
+        raise IOError('"{0:s} not in {1:s}'.format(source_dataset, source.filename))
+
+    if dest_dataset not in dest:
+        raise IOError('"{0:s} not in {1:s}'.format(dest_dataset, dest.filename))
+
+    return _equal(source[source_dataset], dest[dest_dataset])
+
+# --------------------------------------------------------------------------------------------------
+
+def allequal(source, dest, source_datasets, dest_datasets=None):
+    r'''
+Check that all listed datasets are equal in both files.
+    '''
+
+    if not dest_datasets:
+        dest_datasets = [path for path in source_datasets]
+
+    for source_dataset, dest_dataset in zip(source_datasets, dest_datasets):
+        if not equal(source, dest, source_dataset, dest_dataset):
+            return False
+
+    return True
