@@ -1,7 +1,7 @@
 import warnings
 warnings.filterwarnings("ignore")
 
-import os
+import posixpath
 import re
 import h5py
 
@@ -14,7 +14,7 @@ def abspath(path):
 Return absolute path.
     '''
 
-    return os.posixpath.normpath(os.posixpath.join('/', path))
+    return posixpath.normpath(posixpath.join('/', path))
 
 # ==================================================================================================
 
@@ -24,9 +24,9 @@ Join path components.
     '''
 
     if root:
-        return os.posixpath.join('/', *args)
+        return posixpath.join('/', *args)
 
-    return os.posixpath.join(*args)
+    return posixpath.join(*args)
 
 # ==================================================================================================
 
@@ -407,7 +407,7 @@ In addition a 'root' (path prefix) for the destination datasets name can be spec
             raise IOError('Dataset "{0:s}" already exists'.format(dest_path))
 
     # extract groups and sort based on depth
-    groups = list(set([os.posixpath.split(path)[0] for path in dest_datasets]))
+    groups = list(set([posixpath.split(path)[0] for path in dest_datasets]))
     groups = [group for group in groups if group != '/']
     groups = sorted(groups, key=lambda group: (group.count('/'), group))
 
@@ -418,5 +418,5 @@ In addition a 'root' (path prefix) for the destination datasets name can be spec
 
     # copy datasets
     for source_path, dest_path in zip(source_datasets, dest_datasets):
-        group = os.posixpath.split(dest_path)[0]
-        source.copy(source_path, dest[group], os.posixpath.split(dest_path)[1])
+        group = posixpath.split(dest_path)[0]
+        source.copy(source_path, dest[group], posixpath.split(dest_path)[1])
