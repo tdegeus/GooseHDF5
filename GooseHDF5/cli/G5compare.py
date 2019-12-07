@@ -31,6 +31,7 @@ import docopt
 
 from .. import __version__
 from .. import getpaths
+from .. import equal
 
 # --------------------------------------------------------------------------------------------------
 # Check if a file exists, quit otherwise.
@@ -42,40 +43,15 @@ def check_isfile(fname):
         raise IOError('"{0:s}" does not exist'.format(fname))
 
 # --------------------------------------------------------------------------------------------------
-# Support function for "check_dataset".
-# --------------------------------------------------------------------------------------------------
-
-def not_equal(path):
-
-    print('!= {0:s}'.format(path))
-    return False
-
-# --------------------------------------------------------------------------------------------------
 # Check if the datasets (read outside) "a" and "b" are equal. If not print a message with the "path"
 # to the screen and return "False".
 # --------------------------------------------------------------------------------------------------
 
-def check_dataset(path, a, b):
+def check_dataset(source, dest, source_dataset, dest_dataset=None):
 
-    if np.issubdtype(a.dtype, np.number) and np.issubdtype(b.dtype, np.number):
-        if np.allclose(a, b):
-            return True
-        else:
-            return not_equal(path)
-
-    if a.size != b.size:
-        return not_equal(path)
-
-    if a.size == 1:
-        if a[...] == b[...]:
-            return True
-        else:
-            return not_equal(path)
-
-    if list(a) == list(b):
-        return True
-    else:
-        return not_equal(path)
+    if not equal(source, dest, source_dataset, dest_dataset):
+        print('!= {0:s}'.format(source_dataset))
+        return False
 
     return True
 
@@ -95,7 +71,7 @@ def _check_plain(source, other):
 
     for path in getpaths(source):
         if path in other:
-            check_dataset(path, source[path][...], other[path][...])
+            check_dataset(source, other, path)
 
 # --------------------------------------------------------------------------------------------------
 
@@ -128,7 +104,7 @@ def _check_renamed(source, other, renamed):
 
     for new_path, path in s2o.items():
         if new_path in o2s:
-            check_dataset(path, source[path][...], other[new_path][...])
+            check_dataset(source, other, path, new_path)
 
 # --------------------------------------------------------------------------------------------------
 

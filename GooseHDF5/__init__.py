@@ -3,7 +3,7 @@ warnings.filterwarnings("ignore")
 
 import h5py
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 
 # ==================================================================================================
 
@@ -338,6 +338,14 @@ This function can for example be used in conjunction with "getpaths":
 
         datasets = GooseHDF5.filter_datasets(data,
             GooseHDF5.getpaths(data, max_depth=2, fold='/data'))
+
+:arguments:
+
+    **data** (``<h5py.File>``)
+        A HDF5-archive.
+
+    **paths** (``<list<str>>``)
+        A list of paths to datasets.
     '''
 
     import re
@@ -353,6 +361,20 @@ def verify(data, datasets, error=False):
     r'''
 Try reading each dataset of a list of datasets. Return a list with only those datasets that can be
 successfully opened.
+
+:arguments:
+
+    **data** (``<h5py.File>``)
+        A HDF5-archive.
+
+    **datasets** (``<list<str>>``)
+        A list of paths to datasets.
+
+:option:
+
+    **error** ([``False``] | ``True``)
+        If true, the function raises an error if reading failed. If false, the function just
+        continues.
     '''
 
     out = []
@@ -376,6 +398,14 @@ successfully opened.
 def exists(data, path):
     r'''
 Check if a path exists in the HDF5-archive.
+
+:arguments:
+
+    **data** (``<h5py.File>``)
+        A HDF5-archive.
+
+    **path** (``<str>``)
+        A path to datasets.
     '''
 
     if path in data:
@@ -388,6 +418,14 @@ Check if a path exists in the HDF5-archive.
 def exists_any(data, paths):
     r'''
 Check if any of the input paths exists in the HDF5-archive.
+
+:arguments:
+
+    **data** (``<h5py.File>``)
+        A HDF5-archive.
+
+    **paths** (``<list<str>>``)
+        A list of paths to datasets.
     '''
 
     if type(paths) == str:
@@ -404,6 +442,14 @@ Check if any of the input paths exists in the HDF5-archive.
 def exists_all(data, paths):
     r'''
 Check if all of the input paths exists in the HDF5-archive.
+
+:arguments:
+
+    **data** (``<h5py.File>``)
+        A HDF5-archive.
+
+    **paths** (``<list<str>>``)
+        A list of paths to datasets.
     '''
 
     if type(paths) == str:
@@ -424,6 +470,23 @@ can be renamed by specifying a list of 'dest_datasets' (whose entries should cor
 'source_datasets').
 
 In addition a 'root' (path prefix) for the destination datasets name can be specified.
+
+:arguments:
+
+    **source, dest** (``<h5py.File>``)
+        A HDF5-archive.
+
+    **source_datatsets** (``<list<str>>``)
+        A list of paths to datasets in "source".
+
+:options:
+
+    **dest_datasets**  (``<list<str>>``)
+        A list of paths to datasets in "dest".
+        If not specified, it is taken equal to "source_datasets".
+
+    **root** (``<str>``)
+        Path prefix for all 'dest_datasets'.
     '''
 
     import posixpath
@@ -492,6 +555,23 @@ def _equal(a, b):
 # --------------------------------------------------------------------------------------------------
 
 def equal(source, dest, source_dataset, dest_dataset=None):
+    r'''
+Check that a dataset is equal in both files.
+
+:arguments:
+
+    **source, dest** (``<h5py.File>``)
+        A HDF5-archive.
+
+    **source_datatset** (``<str>``)
+        The path to a dataset in ``source``.
+
+:options:
+
+    **dest_dataset**  (``<str>``)
+        The path to a dataset in ``dest``.
+        If not specified, it is taken equal to ``source_dataset``.
+    '''
 
     if not dest_dataset:
         dest_dataset = source_dataset
@@ -509,6 +589,20 @@ def equal(source, dest, source_dataset, dest_dataset=None):
 def allequal(source, dest, source_datasets, dest_datasets=None):
     r'''
 Check that all listed datasets are equal in both files.
+
+:arguments:
+
+    **source, dest** (``<h5py.File>``)
+        A HDF5-archive.
+
+    **source_datatsets** (``<list<str>>``)
+        A list of paths to datasets in "source".
+
+:options:
+
+    **dest_datasets**  (``<list<str>>``)
+        A list of paths to datasets in "dest".
+        If not specified, it is taken equal to "source_datasets".
     '''
 
     if not dest_datasets:
