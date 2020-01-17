@@ -24,4 +24,5 @@ setup(
                'G5check = GooseHDF5.cli.G5check:main',
                'G5compare = GooseHDF5.cli.G5compare:main',
                'G5list = GooseHDF5.cli.G5list:main',
+               'G5print = GooseHDF5.cli.G5print:main',
                'G5repair = GooseHDF5.cli.G5repair:main']})
