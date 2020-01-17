@@ -1,8 +1,8 @@
-'''G5list
+'''G5print
   Print datasets in a HDF5-file.
 
 Usage:
-  G5list [options] <source> <dataset>...
+  G5print [options] <source> <dataset>...
 
 Arguments:
   <source>    HDF5-file.
