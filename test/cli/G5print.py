@@ -14,7 +14,7 @@ def run(cmd):
 # create file
 # -----------
 
-a = np.arange(5)
+a = np.random.random(5)
 
 with h5py.File('a.hdf5', 'w') as source:
   source['/a'] = a
