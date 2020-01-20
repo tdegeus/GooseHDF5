@@ -17,7 +17,6 @@ Options:
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
 '''
 
-# ==================================================================================================
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -30,9 +29,6 @@ import docopt
 from .. import __version__
 from .. import getpaths
 
-# --------------------------------------------------------------------------------------------------
-# Main function
-# --------------------------------------------------------------------------------------------------
 
 def main():
 
