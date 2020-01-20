@@ -8,7 +8,7 @@ Command-line tools
 G5check
 -------
 
-[:download:`G5check <../bin/G5check>`]
+[:download:`G5check <../GooseHDF5/cli/G5check.py>`]
 
 .. code-block:: none
 
@@ -30,7 +30,7 @@ G5check
 G5list
 ------
 
-[:download:`G5list <../bin/G5list>`]
+[:download:`G5list <../GooseHDF5/cli/G5list.py>`]
 
 .. code-block:: none
 
@@ -49,10 +49,33 @@ G5list
     -h, --help            Show help.
         --version         Show version.
 
+G5print
+------
+
+[:download:`G5print <../GooseHDF5/cli/G5print.py>`]
+
+.. code-block:: none
+
+  G5print
+    Print datasets in a HDF5-file.
+
+  Usage:
+    G5print [options] <source> <dataset>...
+
+  Arguments:
+    <source>    HDF5-file.
+    <dataset>   Path to the dataset.
+
+  Options:
+    -r, --regex           Evaluate dataset name as a regular expression.
+        --info            Print information: shape, dtype.
+    -h, --help            Show help.
+        --version         Show version.
+
 G5repair
 --------
 
-[:download:`G5repair <../bin/G5repair>`]
+[:download:`G5repair <../GooseHDF5/cli/G5repair.py>`]
 
 .. code-block:: none
 
@@ -74,7 +97,7 @@ G5repair
 G5compare
 ---------
 
-[:download:`G5compare <../bin/G5compare>`]
+[:download:`G5compare <../GooseHDF5/cli/G5compare.py>`]
 
 .. code-block:: none
 
