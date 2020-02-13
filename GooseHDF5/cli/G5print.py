@@ -9,10 +9,10 @@ Arguments:
     <dataset>   Path to the dataset.
 
 Options:
-    -r, --regex           Evaluate dataset name as a regular expression.
-        --info            Print information: shape, dtype.
-    -h, --help            Show help.
-        --version         Show version.
+    -r, --regex     Evaluate dataset name as a regular expression.
+    -i, --info      Print information: shape, dtype.
+    -h, --help      Show help.
+        --version   Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
 '''

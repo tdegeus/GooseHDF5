@@ -11,7 +11,8 @@ Options:
     -f, --fold=ARG        Fold paths.
     -d, --max-depth=ARG   Maximum depth to display.
     -r, --root=ARG        Start a certain point in the path-tree. [default: /]
-        --info            Print information: shape, dtype.
+    -i, --info            Print information: shape, dtype.
+    -l, --long            As above but will all attributes.
     -h, --help            Show help.
         --version         Show version.
 
@@ -50,7 +51,8 @@ Print the paths to all datasets (one per line), including type information.
         'path': [],
         'size': [],
         'shape': [],
-        'dtype': []}
+        'dtype': [],
+        'attrs': []}
 
     for path in paths:
         if path in source:
@@ -59,11 +61,22 @@ Print the paths to all datasets (one per line), including type information.
             out['size'] += [str(data.size)]
             out['shape'] += [str(data.shape)]
             out['dtype'] += [str(data.dtype)]
+            out['attrs'] += [str(len(data.attrs))]
         else:
             out['path'] += [path]
             out['size'] += ['-']
             out['shape'] += ['-']
             out['dtype'] += ['-']
+            out['attrs'] += ['-']
+
+    def has_attributes(lst):
+        for i in lst:
+            if i != '-' and i != '0':
+                return True
+        return False
+
+
+        del out['attrs']
 
     width = {}
     for key in out:
@@ -73,16 +86,42 @@ Print the paths to all datasets (one per line), including type information.
     fmt = '{0:%ds} {1:%ds} {2:%ds} {3:%ds}' % \
         (width['path'], width['size'], width['shape'], width['dtype'])
 
-    print(fmt.format('path', 'size', 'shape', 'dtype'))
+    if has_attributes(out['attrs']):
+        fmt += ' {4:%ds}' % width['attrs']
+
+    print(fmt.format('path', 'size', 'shape', 'dtype', 'attrs'))
     print(fmt.format(
             '=' * width['path'],
             '=' * width['size'],
             '=' * width['shape'],
-            '=' * width['dtype']))
+            '=' * width['dtype'],
+            '=' * width['attrs']))
 
     for i in range(len(out['path'])):
-        print(fmt.format(out['path'][i], out['size'][i], out['shape'][i], out['dtype'][i]))
+        print(fmt.format(
+            out['path'][i],
+            out['size'][i],
+            out['shape'][i],
+            out['dtype'][i],
+            out['attrs'][i]))
 
+
+def print_attribute(source, paths):
+
+    for path in paths:
+        if path in source:
+
+            data = source[path]
+
+            print('"{0:s}"'.format(path))
+            print('size = {0:s}, shape = {1:s}, dtype = {2:s}'.format(
+                str(data.size), str(data.shape), str(data.dtype)))
+
+            for key in data.attrs:
+                print(key + ':')
+                print(data.attrs[key])
+
+            print('')
 
 def main():
     r'''
@@ -103,5 +142,7 @@ Main function.
 
         if args['--info']:
             print_info(source, paths)
+        elif args['--long']:
+            print_attribute(source, paths)
         else:
             print_plain(source, paths)
