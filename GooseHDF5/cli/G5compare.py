@@ -18,36 +18,28 @@ Options:
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
 '''
 
-# ==================================================================================================
-
+from .. import equal
+from .. import getpaths
+from .. import __version__
+import docopt
+import h5py
+import os
+import sys
+import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
 
-import numpy as np
-import sys
-import os
-import h5py
-import docopt
-
-from .. import __version__
-from .. import getpaths
-from .. import equal
-
-# --------------------------------------------------------------------------------------------------
-# Check if a file exists, quit otherwise.
-# --------------------------------------------------------------------------------------------------
 
 def check_isfile(fname):
-
     if not os.path.isfile(fname):
         raise IOError('"{0:s}" does not exist'.format(fname))
 
-# --------------------------------------------------------------------------------------------------
-# Check if the datasets (read outside) "a" and "b" are equal. If not print a message with the "path"
-# to the screen and return "False".
-# --------------------------------------------------------------------------------------------------
 
 def check_dataset(source, dest, source_dataset, dest_dataset=None):
+    r'''
+Check if the datasets (read outside) "a" and "b" are equal. If not print a message with the "path"
+to the screen and return "False".
+    '''
 
     if not equal(source, dest, source_dataset, dest_dataset):
         print('!= {0:s}'.format(source_dataset))
@@ -55,11 +47,11 @@ def check_dataset(source, dest, source_dataset, dest_dataset=None):
 
     return True
 
-# --------------------------------------------------------------------------------------------------
-# Check all datasets (without allowing for renamed datasets).
-# --------------------------------------------------------------------------------------------------
 
 def _check_plain(source, other):
+    r'''
+Support function for "check_plain."
+    '''
 
     for path in getpaths(source):
         if path not in other:
@@ -73,22 +65,23 @@ def _check_plain(source, other):
         if path in other:
             check_dataset(source, other, path)
 
-# --------------------------------------------------------------------------------------------------
 
 def check_plain(source_name, other_name):
+    r'''
+Check all datasets (without allowing for renamed datasets).
+    '''
     with h5py.File(source_name, 'r') as source:
         with h5py.File(other_name, 'r') as other:
             _check_plain(source, other)
 
-# --------------------------------------------------------------------------------------------------
-# Check all datasets while allowing for renamed datasets.
-# renamed = [['source_name1', 'other_name1'], ['source_name2', 'other_name2'], ...]
-# --------------------------------------------------------------------------------------------------
 
 def _check_renamed(source, other, renamed):
+    r'''
+Support function for "check_renamed."
+    '''
 
-    s2o = {i:i for i in list(getpaths(source))}
-    o2s = {i:i for i in list(getpaths(other))}
+    s2o = {i: i for i in list(getpaths(source))}
+    o2s = {i: i for i in list(getpaths(other))}
 
     for s, o in renamed:
         s2o[s] = o
@@ -106,18 +99,22 @@ def _check_renamed(source, other, renamed):
         if new_path in o2s:
             check_dataset(source, other, path, new_path)
 
-# --------------------------------------------------------------------------------------------------
 
 def check_renamed(source_name, other_name, renamed):
+    r'''
+Check all datasets while allowing for renamed datasets.
+renamed = [['source_name1', 'other_name1'], ['source_name2', 'other_name2'], ...]
+    '''
+
     with h5py.File(source_name, 'r') as source:
         with h5py.File(other_name, 'r') as other:
             _check_renamed(source, other, renamed)
 
-# --------------------------------------------------------------------------------------------------
-# Main function
-# --------------------------------------------------------------------------------------------------
 
 def main():
+    r'''
+Main function.
+    '''
 
     args = docopt.docopt(__doc__, version=__version__)
 

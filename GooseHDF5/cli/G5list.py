@@ -1,58 +1,50 @@
 '''G5list
-  List datasets (or groups of datasets) in a HDF5-file.
+    List datasets (or groups of datasets) in a HDF5-file.
 
 Usage:
-  G5list [options] [--fold ARG]... <source>
+    G5list [options] [--fold ARG]... <source>
 
 Arguments:
-  <source>    HDF5-file.
+    <source>    HDF5-file.
 
 Options:
-  -f, --fold=ARG        Fold paths.
-  -d, --max-depth=ARG   Maximum depth to display.
-  -r, --root=ARG        Start a certain point in the path-tree. [default: /]
-      --info            Print information: shape, dtype.
-  -h, --help            Show help.
-      --version         Show version.
+    -f, --fold=ARG        Fold paths.
+    -d, --max-depth=ARG   Maximum depth to display.
+    -r, --root=ARG        Start a certain point in the path-tree. [default: /]
+        --info            Print information: shape, dtype.
+    -h, --help            Show help.
+        --version         Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
 '''
 
-# ==================================================================================================
-
+from .. import getpaths
+from .. import __version__
+import docopt
+import h5py
+import os
 import warnings
 warnings.filterwarnings("ignore")
 
-import os
-import h5py
-import docopt
-
-from .. import __version__
-from .. import getpaths
-
-# --------------------------------------------------------------------------------------------------
-# Check if a file exists, quit otherwise.
-# --------------------------------------------------------------------------------------------------
 
 def check_isfile(fname):
-
     if not os.path.isfile(fname):
         raise IOError('"{0:s}" does not exist'.format(fname))
 
-# --------------------------------------------------------------------------------------------------
-# Print the paths to all datasets (one per line)
-# --------------------------------------------------------------------------------------------------
 
 def print_plain(source, paths):
+    r'''
+Print the paths to all datasets (one per line).
+    '''
 
     for path in paths:
         print(path)
 
-# --------------------------------------------------------------------------------------------------
-# Print the paths to all datasets (one per line), including type information.
-# --------------------------------------------------------------------------------------------------
 
 def print_info(source, paths):
+    r'''
+Print the paths to all datasets (one per line), including type information.
+    '''
 
     out = {
         'path': [],
@@ -82,16 +74,20 @@ def print_info(source, paths):
         (width['path'], width['size'], width['shape'], width['dtype'])
 
     print(fmt.format('path', 'size', 'shape', 'dtype'))
-    print(fmt.format('='*width['path'], '='*width['size'], '='*width['shape'], '='*width['dtype']))
+    print(fmt.format(
+            '=' * width['path'],
+            '=' * width['size'],
+            '=' * width['shape'],
+            '=' * width['dtype']))
 
     for i in range(len(out['path'])):
         print(fmt.format(out['path'][i], out['size'][i], out['shape'][i], out['dtype'][i]))
 
-# --------------------------------------------------------------------------------------------------
-# Main function
-# --------------------------------------------------------------------------------------------------
 
 def main():
+    r'''
+Main function.
+    '''
 
     args = docopt.docopt(__doc__, version=__version__)
 
@@ -99,10 +95,11 @@ def main():
 
     with h5py.File(args['<source>'], 'r') as source:
 
-        paths = getpaths(source,
-            root = args['--root'],
-            max_depth = args['--max-depth'],
-            fold = args['--fold'])
+        paths = getpaths(
+            source,
+            root=args['--root'],
+            max_depth=args['--max-depth'],
+            fold=args['--fold'])
 
         if args['--info']:
             print_info(source, paths)

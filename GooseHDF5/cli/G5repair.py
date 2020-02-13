@@ -1,48 +1,37 @@
 '''G5repair
-  Extract readable data from a HDF5-file and copy it to a new HDF5-file.
+    Extract readable data from a HDF5-file and copy it to a new HDF5-file.
 
 Usage:
-  G5repair [options] <source> <destination>
+    G5repair [options] <source> <destination>
 
 Arguments:
-  <source>        Source HDF5-file, possibly containing corrupted data.
-  <destination>   Destination HDF5-file.
+    <source>        Source HDF5-file, possibly containing corrupted data.
+    <destination>   Destination HDF5-file.
 
 Options:
-  -f, --force     Force continuation, overwrite existing files.
-  -h, --help      Show help.
-      --version   Show version.
+    -f, --force     Force continuation, overwrite existing files.
+    -h, --help      Show help.
+        --version   Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
 '''
 
-# ==================================================================================================
-
+from .. import getdatasets
+from .. import copydatasets
+from .. import verify
+from .. import __version__
+import docopt
+import h5py
+import os
+import sys
 import warnings
 warnings.filterwarnings("ignore")
 
-import sys
-import os
-import h5py
-import docopt
-
-from .. import __version__
-from .. import verify
-from .. import copydatasets
-from .. import getdatasets
-
-# --------------------------------------------------------------------------------------------------
-# Check if a file exists, quit otherwise.
-# --------------------------------------------------------------------------------------------------
 
 def check_isfile(fname):
-
     if not os.path.isfile(fname):
         raise IOError('"{0:s}" does not exist'.format(fname))
 
-# --------------------------------------------------------------------------------------------------
-# Main function
-# --------------------------------------------------------------------------------------------------
 
 def main():
 

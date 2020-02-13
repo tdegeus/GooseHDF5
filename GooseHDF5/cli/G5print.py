@@ -1,33 +1,31 @@
 '''G5print
-  Print datasets in a HDF5-file.
+    Print datasets in a HDF5-file.
 
 Usage:
-  G5print [options] <source> <dataset>...
+    G5print [options] <source> <dataset>...
 
 Arguments:
-  <source>    HDF5-file.
-  <dataset>   Path to the dataset.
+    <source>    HDF5-file.
+    <dataset>   Path to the dataset.
 
 Options:
-  -r, --regex           Evaluate dataset name as a regular expression.
-      --info            Print information: shape, dtype.
-  -h, --help            Show help.
-      --version         Show version.
+    -r, --regex           Evaluate dataset name as a regular expression.
+        --info            Print information: shape, dtype.
+    -h, --help            Show help.
+        --version         Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
 '''
 
 
+from .. import getpaths
+from .. import __version__
+import docopt
+import h5py
+import re
+import os
 import warnings
 warnings.filterwarnings("ignore")
-
-import os
-import re
-import h5py
-import docopt
-
-from .. import __version__
-from .. import getpaths
 
 
 def main():
@@ -70,4 +68,3 @@ def main():
 
             if len(datasets) > 1 and i < len(datasets) - 1:
                 print('')
-
