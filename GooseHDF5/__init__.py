@@ -1,11 +1,10 @@
+import h5py
 import warnings
 warnings.filterwarnings("ignore")
 
-import h5py
 
 __version__ = '0.4.0'
 
-# ==================================================================================================
 
 def abspath(path):
     r'''
@@ -16,7 +15,6 @@ Return absolute path.
 
     return posixpath.normpath(posixpath.join('/', path))
 
-# ==================================================================================================
 
 def join(*args, root=False):
     r'''
@@ -38,7 +36,6 @@ Join path components.
 
     return posixpath.join(*lst)
 
-# ==================================================================================================
 
 def getdatasets(data, root='/'):
     r'''
@@ -98,7 +95,6 @@ Read more in `this answer <https://stackoverflow.com/a/50720736/2646505>`_.
     for path in iterator(data[root], root):
         yield path
 
-# ==================================================================================================
 
 def getpaths(data, root='/', max_depth=None, fold=None):
     r'''
@@ -173,7 +169,6 @@ Iterator to transverse all datasets across all groups in HDF5 file. Whereby one 
 
     return _getpaths(data, root)
 
-# ==================================================================================================
 
 def _getpaths(data, root):
     r'''
@@ -203,7 +198,6 @@ Specialization for ``getpaths``
     for path in iterator(data[root], root):
         yield path
 
-# ==================================================================================================
 
 def _getpaths_maxdepth(data, root, max_depth):
     r'''
@@ -224,7 +218,7 @@ Specialization for ``getpaths`` such that:
             if isinstance(item, h5py.Dataset):
                 yield path
 
-            elif len(path.split('/'))-1 >= max_depth:
+            elif len(path.split('/')) - 1 >= max_depth:
                 yield path + '/...'
 
             elif isinstance(item, h5py.Group):
@@ -232,7 +226,7 @@ Specialization for ``getpaths`` such that:
 
     # ---------------------------------------------
 
-    if type(max_depth) == str:
+    if isinstance(max_depth, str):
         max_depth = int(max_depth)
 
     if isinstance(data[root], h5py.Dataset):
@@ -241,7 +235,6 @@ Specialization for ``getpaths`` such that:
     for path in iterator(data[root], root, max_depth):
         yield path
 
-# ==================================================================================================
 
 def _getpaths_fold(data, root, fold):
     r'''
@@ -270,7 +263,7 @@ Specialization for ``getpaths`` such that:
 
     # ---------------------------------------------
 
-    if type(fold) == str:
+    if isinstance(fold, str):
         fold = [fold]
 
     if isinstance(data[root], h5py.Dataset):
@@ -279,7 +272,6 @@ Specialization for ``getpaths`` such that:
     for path in iterator(data[root], root, fold):
         yield path
 
-# ==================================================================================================
 
 def _getpaths_fold_maxdepth(data, root, fold, max_depth):
     r'''
@@ -301,7 +293,7 @@ Specialization for ``getpaths`` such that:
             if isinstance(item, h5py.Dataset):
                 yield path
 
-            elif len(path.split('/'))-1 >= max_depth:
+            elif len(path.split('/')) - 1 >= max_depth:
                 yield path + '/...'
 
             elif path in fold:
@@ -312,10 +304,10 @@ Specialization for ``getpaths`` such that:
 
     # ---------------------------------------------
 
-    if type(max_depth) == str:
+    if isinstance(max_depth, str):
         max_depth = int(max_depth)
 
-    if type(fold) == str:
+    if isinstance(fold, str):
         fold = [fold]
 
     if isinstance(data[root], h5py.Dataset):
@@ -324,7 +316,6 @@ Specialization for ``getpaths`` such that:
     for path in iterator(data[root], root, fold, max_depth):
         yield path
 
-# ==================================================================================================
 
 def filter_datasets(data, paths):
     r'''
@@ -355,7 +346,6 @@ This function can for example be used in conjunction with "getpaths":
     paths = [path for path in paths if isinstance(data[path], h5py.Dataset)]
     return paths
 
-# ==================================================================================================
 
 def verify(data, datasets, error=False):
     r'''
@@ -393,7 +383,6 @@ successfully opened.
 
     return out
 
-# ==================================================================================================
 
 def exists(data, path):
     r'''
@@ -413,7 +402,6 @@ Check if a path exists in the HDF5-archive.
 
     return False
 
-# ==================================================================================================
 
 def exists_any(data, paths):
     r'''
@@ -428,7 +416,7 @@ Check if any of the input paths exists in the HDF5-archive.
         A list of paths to datasets.
     '''
 
-    if type(paths) == str:
+    if isinstance(paths, str):
         paths = [paths]
 
     for path in paths:
@@ -437,7 +425,6 @@ Check if any of the input paths exists in the HDF5-archive.
 
     return False
 
-# ==================================================================================================
 
 def exists_all(data, paths):
     r'''
@@ -452,7 +439,7 @@ Check if all of the input paths exists in the HDF5-archive.
         A list of paths to datasets.
     '''
 
-    if type(paths) == str:
+    if isinstance(paths, str):
         paths = [paths]
 
     for path in paths:
@@ -461,7 +448,6 @@ Check if all of the input paths exists in the HDF5-archive.
 
     return True
 
-# ==================================================================================================
 
 def copydatasets(source, dest, source_datasets, dest_datasets=None, root=None):
     r'''
@@ -518,7 +504,6 @@ In addition a 'root' (path prefix) for the destination datasets name can be spec
         group = posixpath.split(dest_path)[0]
         source.copy(source_path, dest[group], posixpath.split(dest_path)[1])
 
-# ==================================================================================================
 
 def _equal(a, b):
 
@@ -552,7 +537,6 @@ def _equal(a, b):
 
     return True
 
-# --------------------------------------------------------------------------------------------------
 
 def equal(source, dest, source_dataset, dest_dataset=None):
     r'''
@@ -584,7 +568,6 @@ Check that a dataset is equal in both files.
 
     return _equal(source[source_dataset], dest[dest_dataset])
 
-# --------------------------------------------------------------------------------------------------
 
 def allequal(source, dest, source_datasets, dest_datasets=None):
     r'''
