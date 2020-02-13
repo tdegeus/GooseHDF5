@@ -47,6 +47,12 @@ def print_info(source, paths):
 Print the paths to all datasets (one per line), including type information.
     '''
 
+    def has_attributes(lst):
+        for i in lst:
+            if i != '-' and i != '0':
+                return True
+        return False
+
     out = {
         'path': [],
         'size': [],
@@ -68,15 +74,6 @@ Print the paths to all datasets (one per line), including type information.
             out['shape'] += ['-']
             out['dtype'] += ['-']
             out['attrs'] += ['-']
-
-    def has_attributes(lst):
-        for i in lst:
-            if i != '-' and i != '0':
-                return True
-        return False
-
-
-        del out['attrs']
 
     width = {}
     for key in out:
