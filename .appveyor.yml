@@ -42,4 +42,5 @@ build_script:
   - python test/cli/G5compare.py
   - python test/cli/G5list.py
   - python test/cli/G5repair.py
+  - python test/cli/G5repack.py
 
