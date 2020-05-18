@@ -49,6 +49,20 @@ with h5py.File('a.hdf5', 'w') as source:
         source['/d/equal'] = d
         other['/e/equal'] = d
 
+        # attribute
+
+        e = np.random.random(25)
+
+        source['/e/equal'] = e
+        source['/e/equal'].attrs['key'] = e
+        source['/e/not_equal'] = e
+        source['/e/not_equal'].attrs['key'] = e
+
+        other['/e/equal'] = e
+        other['/e/equal'].attrs['key'] = e
+        other['/e/not_equal'] = e
+        other['/e/not_equal'].attrs['key'] = np.random.random(25)
+
 
 output = sorted(run("G5compare a.hdf5 b.hdf5 -r /d/equal:/e/equal"))
 
