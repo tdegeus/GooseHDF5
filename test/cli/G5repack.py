@@ -19,6 +19,6 @@ with h5py.File('a.hdf5', 'r') as source:
 
 os.remove('a.hdf5')
 
-if not np.all(a == b):
+if not np.allclose(a, b):
     raise IOError('Test failed')
 
