@@ -3,7 +3,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-__version__ = '0.6.0'
+__version__ = '0.7.0'
 
 
 def abspath(path):
@@ -504,16 +504,15 @@ In addition a 'root' (path prefix) for the destination datasets name can be spec
         group = posixpath.split(dest_path)[0]
         source.copy(source_path, dest[group], posixpath.split(dest_path)[1])
 
-
-def _equal(a, b):
+def _equal_value(a, b):
 
     import numpy as np
 
-    if isinstance(a, h5py.Group) and isinstance(b, h5py.Group):
-        return True
-
-    if not isinstance(a, h5py.Dataset) or not isinstance(b, h5py.Dataset):
-        raise IOError('Not a Dataset')
+    if type(a) == str:
+        if type(b) == str:
+            return a == b
+        else:
+            return False
 
     if np.issubdtype(a.dtype, np.number) and np.issubdtype(b.dtype, np.number):
         if np.allclose(a, b):
@@ -530,12 +529,28 @@ def _equal(a, b):
         else:
             return False
 
-    if list(a) == list(b):
-        return True
-    else:
-        return False
+    return list(a) == list(b)
 
-    return True
+
+def _equal(a, b):
+
+    if isinstance(a, h5py.Group) and isinstance(b, h5py.Group):
+        return True
+
+    if not isinstance(a, h5py.Dataset) or not isinstance(b, h5py.Dataset):
+        raise IOError('Not a Dataset')
+
+    for key in a.attrs:
+        if key not in b.attrs:
+            return False
+        if not _equal_value(a.attrs[key], b.attrs[key]):
+            return False
+
+    for key in b.attrs:
+        if key not in a.attrs:
+            return False
+
+    return _equal_value(a, b)
 
 
 def equal(source, dest, source_dataset, dest_dataset=None):
