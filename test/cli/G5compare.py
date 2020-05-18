@@ -51,22 +51,22 @@ with h5py.File('a.hdf5', 'w') as source:
 
         # attribute
 
-        e = np.random.random(25)
+        f = np.random.random(25)
 
-        source['/e/equal'] = e
-        source['/e/equal'].attrs['key'] = e
-        source['/e/not_equal'] = e
-        source['/e/not_equal'].attrs['key'] = e
+        source['/f/equal'] = f
+        source['/f/equal'].attrs['key'] = f
+        source['/f/not_equal'] = f
+        source['/f/not_equal'].attrs['key'] = f
 
-        other['/e/equal'] = e
-        other['/e/equal'].attrs['key'] = e
-        other['/e/not_equal'] = e
-        other['/e/not_equal'].attrs['key'] = np.random.random(25)
+        other['/f/equal'] = f
+        other['/f/equal'].attrs['key'] = f
+        other['/f/not_equal'] = f
+        other['/f/not_equal'].attrs['key'] = np.random.random(25)
 
 
 output = sorted(run("G5compare a.hdf5 b.hdf5 -r /d/equal:/e/equal"))
 
-expected_output = sorted(['!= /a/not_equal', '!= /b/not_equal', '!= /c/not_equal'])
+expected_output = sorted(['!= /a/not_equal', '!= /b/not_equal', '!= /c/not_equal', '!= /f/not_equal'])
 
 os.remove('a.hdf5')
 os.remove('b.hdf5')
