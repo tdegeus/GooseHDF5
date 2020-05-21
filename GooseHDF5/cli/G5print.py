@@ -2,7 +2,7 @@
     Print datasets in a HDF5-file.
 
 Usage:
-    G5print [options] <source> <dataset>...
+    G5print [options] <source> [<dataset>...]
 
 Arguments:
     <source>    HDF5-file.
@@ -39,7 +39,9 @@ def main():
 
     with h5py.File(args['<source>'], 'r') as source:
 
-        if args['--regex']:
+        if len(args['<dataset>']) == 0:
+            datasets = list(getpaths(source))
+        elif args['--regex']:
             paths = getpaths(source)
             datasets = []
             for dataset in args['<dataset>']:
