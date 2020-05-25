@@ -16,6 +16,7 @@ Options:
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
 '''
 
+from .. import isnumeric
 from .. import getpaths
 from .. import __version__
 import docopt
@@ -33,7 +34,7 @@ def copy_dataset(old, new, path, compress):
 
     data = old[path][...]
 
-    if data.size == 1 or not compress:
+    if data.size == 1 or not compress or not isnumeric(data):
         new[path] = old[path][...]
     else:
         dset = new.create_dataset(path, data.shape, compression="gzip")

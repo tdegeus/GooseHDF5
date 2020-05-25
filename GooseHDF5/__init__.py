@@ -3,7 +3,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-__version__ = '0.7.1'
+__version__ = '0.7.2'
 
 
 def abspath(path):
@@ -503,6 +503,23 @@ In addition a 'root' (path prefix) for the destination datasets name can be spec
     for source_path, dest_path in zip(source_datasets, dest_datasets):
         group = posixpath.split(dest_path)[0]
         source.copy(source_path, dest[group], posixpath.split(dest_path)[1])
+
+
+def isnumeric(a):
+    r'''
+Returns ``True`` is an array contains numeric values.
+    '''
+
+    import numpy as np
+
+    if type(a) == str:
+        return False
+
+    if np.issubdtype(a.dtype, np.number):
+        return True
+
+    return False
+
 
 def _equal_value(a, b):
 

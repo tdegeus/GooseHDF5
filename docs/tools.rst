@@ -63,7 +63,7 @@ G5print
         Print datasets in a HDF5-file.
 
     Usage:
-        G5print [options] <source> <dataset>...
+        G5print [options] <source> [<dataset>...]
 
     Arguments:
         <source>    HDF5-file.
@@ -139,5 +139,6 @@ G5repack
         <source>    HDF5-file.
 
     Options:
+        -c, --compress  Apply compression (using the loss-less GZip algorithm).
         -h, --help      Show help.
             --version   Show version.
