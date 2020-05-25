@@ -8,7 +8,7 @@ def run(cmd):
     return out
 
 a = np.random.random(1000)
-b = ['foo', 'bar']
+b = 'foo'
 
 with h5py.File('a.hdf5', 'w') as source:
     source['/a'] = a
