@@ -66,7 +66,7 @@ with h5py.File('a.hdf5', 'w') as source:
 
 output = sorted(run("G5compare a.hdf5 b.hdf5 -r /d/equal:/e/equal"))
 
-expected_output = sorted(['!= /a/not_equal', '!= /b/not_equal', '!= /c/not_equal', '!= /f/not_equal'])
+expected_output = sorted([' !=  /a/not_equal', ' !=  /b/not_equal', ' !=  /c/not_equal', ' !=  /f/not_equal'])
 
 os.remove('a.hdf5')
 os.remove('b.hdf5')
