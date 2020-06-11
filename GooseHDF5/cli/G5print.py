@@ -42,14 +42,17 @@ def main():
     with h5py.File(args['<source>'], 'r') as source:
 
         if len(args['<dataset>']) == 0:
+            print_header = True
             datasets = list(getpaths(source))
         elif args['--regex']:
+            print_header = True
             paths = getpaths(source)
             datasets = []
             for dataset in args['<dataset>']:
                 datasets += [path for path in paths if re.match(dataset, path)]
         else:
             datasets = args['<dataset>']
+            print_header = len(datasets) > 1
 
         for dataset in datasets:
             if dataset not in source:
@@ -66,7 +69,7 @@ def main():
                     str(data.shape),
                     str(data.dtype),
                 ))
-            elif len(datasets) > 1:
+            elif print_header:
                 print(dataset)
 
             if args['--attrs']:
