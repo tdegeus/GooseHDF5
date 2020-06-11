@@ -13,13 +13,11 @@ a = np.random.random(5)
 
 with h5py.File('a.hdf5', 'w') as source:
     source['/a'] = a
+    source['/a'].attrs['desc'] = 'Example'
 
+expected_output = ['desc : Example'] + [str(a)]
 
-output = run('G5print a.hdf5 "/a"')
-assert len(output) == 1
-output = output[0]
-
-expected_output = str(a)
+output = run('G5print a.hdf5 -a "/a"')
 
 os.remove('a.hdf5')
 

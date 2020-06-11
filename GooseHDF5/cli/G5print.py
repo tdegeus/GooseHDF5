@@ -11,6 +11,8 @@ Arguments:
 Options:
     -r, --regex     Evaluate dataset name as a regular expression.
     -i, --info      Print information: shape, dtype.
+    -a, --attrs     Print attributes.
+        --no-data   Don't print data.
     -h, --help      Show help.
         --version   Show version.
 
@@ -40,14 +42,17 @@ def main():
     with h5py.File(args['<source>'], 'r') as source:
 
         if len(args['<dataset>']) == 0:
+            print_header = True
             datasets = list(getpaths(source))
         elif args['--regex']:
+            print_header = True
             paths = getpaths(source)
             datasets = []
             for dataset in args['<dataset>']:
                 datasets += [path for path in paths if re.match(dataset, path)]
         else:
             datasets = args['<dataset>']
+            print_header = len(datasets) > 1
 
         for dataset in datasets:
             if dataset not in source:
@@ -64,10 +69,15 @@ def main():
                     str(data.shape),
                     str(data.dtype),
                 ))
-            elif len(datasets) > 1:
+            elif print_header:
                 print(dataset)
 
-            print(data[...])
+            if args['--attrs']:
+                for key in data.attrs:
+                    print(key + ' : ' + str(data.attrs[key]))
+
+            if not args['--no-data']:
+                print(data[...])
 
             if len(datasets) > 1 and i < len(datasets) - 1:
                 print('')
