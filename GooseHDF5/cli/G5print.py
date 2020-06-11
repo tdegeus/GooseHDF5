@@ -11,6 +11,8 @@ Arguments:
 Options:
     -r, --regex     Evaluate dataset name as a regular expression.
     -i, --info      Print information: shape, dtype.
+    -a, --attrs     Print attributes.
+        --no-data   Don't print data.
     -h, --help      Show help.
         --version   Show version.
 
@@ -67,7 +69,12 @@ def main():
             elif len(datasets) > 1:
                 print(dataset)
 
-            print(data[...])
+            if args['--attrs']:
+                for key in data.attrs:
+                    print(key + ' : ' + str(data.attrs[key]))
+
+            if not args['--no-data']:
+                print(data[...])
 
             if len(datasets) > 1 and i < len(datasets) - 1:
                 print('')
