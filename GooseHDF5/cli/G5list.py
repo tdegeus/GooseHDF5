@@ -111,12 +111,12 @@ def print_attribute(source, paths):
             data = source[path]
 
             print('"{0:s}"'.format(path))
-            print('size = {0:s}, shape = {1:s}, dtype = {2:s}'.format(
+            print('- prop: size = {0:s}, shape = {1:s}, dtype = {2:s}'.format(
                 str(data.size), str(data.shape), str(data.dtype)))
 
             for key in data.attrs:
-                print(key + ':')
-                print(data.attrs[key])
+                print('- attr: ' + key + ' = ')
+                print('        ' + data.attrs[key])
 
             print('')
 
