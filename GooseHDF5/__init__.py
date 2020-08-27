@@ -3,7 +3,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-__version__ = '0.8.1'
+__version__ = '0.9.0'
 
 
 def abspath(path):
@@ -460,7 +460,7 @@ In addition a 'root' (path prefix) for the destination datasets name can be spec
 :arguments:
 
     **source, dest** (``<h5py.File>``)
-        A HDF5-archive.
+        The source and destination HDF5-archives.
 
     **source_datatsets** (``<list<str>>``)
         A list of paths to datasets in "source".
@@ -577,7 +577,7 @@ Check that a dataset is equal in both files.
 :arguments:
 
     **source, dest** (``<h5py.File>``)
-        A HDF5-archive.
+        The source and destination HDF5-archives.
 
     **source_datatset** (``<str>``)
         The path to a dataset in ``source``.
@@ -608,7 +608,7 @@ Check that all listed datasets are equal in both files.
 :arguments:
 
     **source, dest** (``<h5py.File>``)
-        A HDF5-archive.
+        The source and destination HDF5-archives.
 
     **source_datatsets** (``<list<str>>``)
         A list of paths to datasets in "source".
@@ -628,3 +628,44 @@ Check that all listed datasets are equal in both files.
             return False
 
     return True
+
+
+def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
+    r'''
+Copy a dataset from one file to another. This function also copies possible attributes.
+
+:arguments:
+
+    **source, dest** (``<h5py.File>``)
+        The source and destination HDF5-archives.
+
+    **paths** (``<str>``, ``<list<str>>``)
+        The path(s) to copy.
+
+:options:
+
+    **compress** ([``False``] | ``True``)
+        If ``True`` compression is applied to the destination dataset(s).
+
+    **double_to_float** ([``False``] | ``True``)
+        If ``True`` doubles are converted to floats before copying the dataset(s).
+    '''
+
+    if type(paths) != list:
+        paths = list(paths)
+
+    for path in paths:
+
+        data = source[path][...]
+
+        if data.size == 1 or not compress or not isnumeric(data):
+            dest[path] = source[path][...]
+        else:
+            dtype = source[path].dtype
+            if dtype == np.float64 and double_to_float:
+                dtype = np.float32
+            dset = dest.create_dataset(path, data.shape, dtype=dtype, compression="gzip")
+            dset[:] = data
+
+        for key in source[path].attrs:
+            dest[path].attrs[key] = source[path].attrs[key]

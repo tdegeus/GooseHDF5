@@ -32,22 +32,6 @@ def check_isfile(fname):
     if not os.path.isfile(fname):
         raise IOError('"{0:s}" does not exist'.format(fname))
 
-def copy_dataset(old, new, path, compress, double_to_float):
-
-    data = old[path][...]
-
-    if data.size == 1 or not compress or not isnumeric(data):
-        new[path] = old[path][...]
-    else:
-        dtype = old[path].dtype
-        if dtype == np.float64 and double_to_float:
-            dtype = np.float32
-        dset = new.create_dataset(path, data.shape, dtype=dtype, compression="gzip")
-        dset[:] = data
-
-    for key in old[path].attrs:
-        new[path].attrs[key] = old[path].attrs[key]
-
 def main():
 
     args = docopt.docopt(__doc__, version=__version__)
@@ -61,7 +45,6 @@ def main():
 
         with h5py.File(filename, 'r') as source:
             with h5py.File(tempname, 'w') as tmp:
-                for path in getpaths(source):
-                    copy_dataset(source, tmp, path, args['--compress'], args['--float'])
+                copy_dataset(source, tmp, getpaths(source), args['--compress'], args['--float'])
 
         os.replace(tempname, filename)
