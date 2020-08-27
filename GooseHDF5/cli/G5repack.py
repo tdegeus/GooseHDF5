@@ -19,6 +19,7 @@ Options:
 
 from .. import isnumeric
 from .. import getpaths
+from .. import copy_dataset
 from .. import __version__
 import docopt
 import h5py
