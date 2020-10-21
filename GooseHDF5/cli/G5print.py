@@ -57,6 +57,7 @@ def main():
         for dataset in datasets:
             if dataset not in source:
                 print('"{0:s}" not in "{1:s}"'.format(dataset, source.filename))
+                sys.exit(1)
 
         for i, dataset in enumerate(datasets):
 
