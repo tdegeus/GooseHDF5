@@ -116,7 +116,7 @@ def print_attribute(source, paths):
 
             for key in data.attrs:
                 print('- attr: ' + key + ' = ')
-                print('        ' + data.attrs[key])
+                print('        ' + str(data.attrs[key]))
 
             print('')
 
