@@ -18,7 +18,7 @@ output = run('G5repack -c a.hdf5')
 
 with h5py.File('a.hdf5', 'r') as source:
     a_r = source['/a'][...]
-    b_r = source['/b'][...]
+    b_r = source['/b'].asstr()[...]
 
 os.remove('a.hdf5')
 
