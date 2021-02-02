@@ -19,6 +19,7 @@ Contents
 
    tools.rst
    module.rst
+   examples.rst
 
 Getting GooseHDF5
 =================

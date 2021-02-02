@@ -53,7 +53,7 @@ G5list
             --version         Show version.
 
 G5print
-------
+-------
 
 [:download:`G5print <../GooseHDF5/cli/G5print.py>`]
 
@@ -122,7 +122,7 @@ G5compare
           --version         Show version.
 
 G5repack
----------
+--------
 
 [:download:`G5repack <../GooseHDF5/cli/G5repack.py>`]
 
