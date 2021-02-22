@@ -19,7 +19,7 @@ Options:
 from .. import getdatasets
 from .. import copydatasets
 from .. import verify
-from .. import __version__
+from .. import version
 import docopt
 import h5py
 import os
@@ -35,7 +35,7 @@ def check_isfile(fname):
 
 def main():
 
-    args = docopt.docopt(__doc__, version=__version__)
+    args = docopt.docopt(__doc__, version=version)
 
     check_isfile(args['<source>'])
 

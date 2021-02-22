@@ -21,7 +21,7 @@ Options:
 
 
 from .. import getpaths
-from .. import __version__
+from .. import version
 import docopt
 import h5py
 import re
@@ -33,7 +33,7 @@ warnings.filterwarnings("ignore")
 
 def main():
 
-    args = docopt.docopt(__doc__, version=__version__)
+    args = docopt.docopt(__doc__, version=version)
 
     if not os.path.isfile(args['<source>']):
         print('File does not exist')

@@ -2,14 +2,8 @@
 from setuptools import setup
 from setuptools import find_packages
 
-import re
-
-filepath = 'GooseHDF5/__init__.py'
-__version__ = re.findall(r'__version__ = \'(.*)\'', open(filepath).read())[0]
-
 setup(
     name='GooseHDF5',
-    version=__version__,
     license='MIT',
     author='Tom de Geus',
     author_email='tom@geus.me',
@@ -18,7 +12,9 @@ setup(
     keywords='HDF5, h5py',
     url='https://github.com/tdegeus/GooseHDF5',
     packages=find_packages(),
-    install_requires=['docopt>=0.6.2', 'h5py>=2.8.0'],
+    use_scm_version = {'write_to': 'GooseHDF5/_version.py'},
+    setup_requires = ['setuptools_scm'],
+    install_requires=['docopt', 'h5py'],
     entry_points={
         'console_scripts': [
             'G5check = GooseHDF5.cli.G5check:main',

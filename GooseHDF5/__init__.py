@@ -2,10 +2,9 @@ import h5py
 import numpy as np
 import warnings
 
+from ._version import *
+
 warnings.filterwarnings("ignore")
-
-
-__version__ = '0.9.2'
 
 
 def abspath(path):
