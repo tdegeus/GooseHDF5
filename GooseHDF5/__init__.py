@@ -11,6 +11,9 @@ __version__ = '0.9.2'
 def abspath(path):
     r'''
 Return absolute path.
+
+:param str path: A HDF5-path.
+:return: The absolute path.
     '''
 
     import posixpath
@@ -21,6 +24,9 @@ Return absolute path.
 def join(*args, root=False):
     r'''
 Join path components.
+
+:param list args: Piece of a path.
+:return: The concatenated path.
     '''
 
     import posixpath
@@ -41,37 +47,29 @@ Join path components.
 
 def getdatasets(data, root='/'):
     r'''
-Iterator to transverse all datasets across all groups in HDF5 file. Usage:
+Iterator to transverse all datasets in HDF5 file.
 
-.. code-block:: python
+:param h5py.File data: A HDF5-archive.
+:param str root: Start a certain point along the path-tree.
+:return: Iterator.
 
-    with h5py.File('...', 'r') as data:
+:example:
 
-        # loop over all paths
-        for path in GooseHDF5.getdatasets(data):
-            print(path)
+    .. code-block:: python
 
-        # get a set of all datasets
-        paths = set(GooseHDF5.getdatasets(data))
+        with h5py.File('...', 'r') as data:
 
-        # get a list of all datasets
-        paths = list(GooseHDF5.getdatasets(data))
+            # loop over all datasets
+            for path in GooseHDF5.getdatasets(data):
+                print(path)
 
-Read more in `this answer <https://stackoverflow.com/a/50720736/2646505>`_.
+            # get a set of all datasets
+            paths = set(GooseHDF5.getdatasets(data))
 
-:arguments:
+            # get a list of all datasets
+            paths = list(GooseHDF5.getdatasets(data))
 
-    **data** (``<h5py.File>``)
-        A HDF5-archive.
-
-:options:
-
-    **root** ([``'/'``] | ``<str>``)
-        Start a certain point along the path-tree.
-
-:returns:
-
-    Iterator.
+    Read more in `this answer <https://stackoverflow.com/a/50720736/2646505>`_.
     '''
 
     # ---------------------------------------------
@@ -100,31 +98,17 @@ Read more in `this answer <https://stackoverflow.com/a/50720736/2646505>`_.
 
 def getpaths(data, root='/', max_depth=None, fold=None):
     r'''
-Iterator to transverse all datasets across all groups in HDF5 file. Whereby one can choose to fold
-(not transverse deeper than):
+Iterator to transverse all datasets in HDF5 file.
+One can choose to fold (not transverse deeper than):
 
-- Groups deeper than a certain ``max_depth``.
-- A (list of) specific group(s).
+-   Groups deeper than a certain ``max_depth``.
+-   A (list of) specific group(s).
 
-:arguments:
-
-    **data** (``<h5py.File>``)
-        A HDF5-archive.
-
-:options:
-
-    **root** ([``'/'``] | ``<str>``)
-        Start a certain point along the path-tree.
-
-    **max_depth** (``<int>``)
-        Set a maximum depth beyond which groups are folded.
-
-    **fold** (``<list>``)
-        Specify groups that are folded.
-
-:returns:
-
-    Iterator.
+:param h5py.File data: A HDF5-archive.
+:param str root: Start a certain point along the path-tree.
+:param int max_depth: Set a maximum depth beyond which groups are folded.
+:param list fold: Specify groups that are folded.
+:return: Iterator.
 
 :example:
 
@@ -174,7 +158,7 @@ Iterator to transverse all datasets across all groups in HDF5 file. Whereby one 
 
 def _getpaths(data, root):
     r'''
-Specialization for ``getpaths``
+Specialization for :py:func:`getpaths`.
     '''
 
     # ---------------------------------------------
@@ -203,7 +187,7 @@ Specialization for ``getpaths``
 
 def _getpaths_maxdepth(data, root, max_depth):
     r'''
-Specialization for ``getpaths`` such that:
+Specialization for :py:func:`getpaths` such that:
 
 - Groups deeper than a certain maximum depth are folded.
     '''
@@ -240,7 +224,7 @@ Specialization for ``getpaths`` such that:
 
 def _getpaths_fold(data, root, fold):
     r'''
-Specialization for ``getpaths`` such that:
+Specialization for :py:func:`getpaths` such that:
 
 - Certain groups are folded.
     '''
@@ -277,7 +261,7 @@ Specialization for ``getpaths`` such that:
 
 def _getpaths_fold_maxdepth(data, root, fold, max_depth):
     r'''
-Specialization for ``getpaths`` such that:
+Specialization for :py:func:`getpaths` such that:
 
 - Certain groups are folded.
 - Groups deeper than a certain maximum depth are folded.
@@ -321,9 +305,9 @@ Specialization for ``getpaths`` such that:
 
 def filter_datasets(data, paths):
     r'''
-From a list of paths filter those paths that do not point to datasets.
+From a list of paths, filter those paths that do not point to datasets.
 
-This function can for example be used in conjunction with "getpaths":
+This function can, for example, be used in conjunction with :py:func:`getpaths`:
 
 .. code-block:: python
 
@@ -332,13 +316,9 @@ This function can for example be used in conjunction with "getpaths":
         datasets = GooseHDF5.filter_datasets(data,
             GooseHDF5.getpaths(data, max_depth=2, fold='/data'))
 
-:arguments:
-
-    **data** (``<h5py.File>``)
-        A HDF5-archive.
-
-    **paths** (``<list<str>>``)
-        A list of paths to datasets.
+:param h5py.File data: A HDF5-archive.
+:param list paths: List of HDF5-paths.
+:return: Filtered ``paths``.
     '''
 
     import re
@@ -351,25 +331,19 @@ This function can for example be used in conjunction with "getpaths":
 
 def verify(data, datasets, error=False):
     r'''
-Try reading each dataset of a list of datasets. Return a list with only those datasets that can be
-successfully opened.
+Try reading each datasets.
 
-:arguments:
+:param h5py.File data: A HDF5-archive.
+:param list datasets: List of HDF5-paths tp datasets.
 
-    **data** (``<h5py.File>``)
-        A HDF5-archive.
+:param bool error:
+    -   If ``True``, the function raises an error if reading failed.
+    -   If ``False``, the function just continues.
 
-    **datasets** (``<list<str>>``)
-        A list of paths to datasets.
-
-:option:
-
-    **error** ([``False``] | ``True``)
-        If true, the function raises an error if reading failed. If false, the function just
-        continues.
+:return: List with only those datasets that can be successfully opened.
     '''
 
-    out = []
+    ret = []
 
     for path in datasets:
 
@@ -381,22 +355,17 @@ successfully opened.
             else:
                 continue
 
-        out += [path]
+        ret += [path]
 
-    return out
+    return ret
 
 
 def exists(data, path):
     r'''
 Check if a path exists in the HDF5-archive.
 
-:arguments:
-
-    **data** (``<h5py.File>``)
-        A HDF5-archive.
-
-    **path** (``<str>``)
-        A path to datasets.
+:param h5py.File data: A HDF5-archive.
+:param str path: HDF5-path.
     '''
 
     if path in data:
@@ -409,13 +378,8 @@ def exists_any(data, paths):
     r'''
 Check if any of the input paths exists in the HDF5-archive.
 
-:arguments:
-
-    **data** (``<h5py.File>``)
-        A HDF5-archive.
-
-    **paths** (``<list<str>>``)
-        A list of paths to datasets.
+:param h5py.File data: A HDF5-archive.
+:param list path: List of HDF5-paths.
     '''
 
     if isinstance(paths, str):
@@ -434,11 +398,8 @@ Check if all of the input paths exists in the HDF5-archive.
 
 :arguments:
 
-    **data** (``<h5py.File>``)
-        A HDF5-archive.
-
-    **paths** (``<list<str>>``)
-        A list of paths to datasets.
+:param h5py.File data: A HDF5-archive.
+:param list path: List of HDF5-paths.
     '''
 
     if isinstance(paths, str):
@@ -453,28 +414,17 @@ Check if all of the input paths exists in the HDF5-archive.
 
 def copydatasets(source, dest, source_datasets, dest_datasets=None, root=None):
     r'''
-Copy all datasets from one HDF5-archive 'source' to another HDF5-archive 'dest'. The datasets
-can be renamed by specifying a list of 'dest_datasets' (whose entries should correspond to the
-'source_datasets').
+Copy all datasets from one HDF5-archive ``source`` to another HDF5-archive ``dest``.
+The datasets can be renamed by specifying a list of ``dest_datasets``
+(whose entries should correspond to the ``source_datasets``).
 
-In addition a 'root' (path prefix) for the destination datasets name can be specified.
+In addition, a ``root`` (path prefix) for the destination datasets name can be specified.
 
-:arguments:
-
-    **source, dest** (``<h5py.File>``)
-        The source and destination HDF5-archives.
-
-    **source_datatsets** (``<list<str>>``)
-        A list of paths to datasets in "source".
-
-:options:
-
-    **dest_datasets**  (``<list<str>>``)
-        A list of paths to datasets in "dest".
-        If not specified, it is taken equal to "source_datasets".
-
-    **root** (``<str>``)
-        Path prefix for all 'dest_datasets'.
+:param h5py.File source: The source HDF5-archive.
+:param h5py.File dest: The destination HDF5-archive.
+:param list source_datatsets: List of HDF5-paths to datasets in ``source``.
+:param list dest_datasets: List of HDF5-paths to datasets in ``dest``, defaults to ``source_datasets``.
+:param str root: Path prefix for all ``dest_datasets``.
     '''
 
     import posixpath
@@ -510,6 +460,9 @@ In addition a 'root' (path prefix) for the destination datasets name can be spec
 def isnumeric(a):
     r'''
 Returns ``True`` is an array contains numeric values.
+
+:param array a: An array.
+:return: bool
     '''
 
     import numpy as np
@@ -576,19 +529,10 @@ def equal(source, dest, source_dataset, dest_dataset=None):
     r'''
 Check that a dataset is equal in both files.
 
-:arguments:
-
-    **source, dest** (``<h5py.File>``)
-        The source and destination HDF5-archives.
-
-    **source_datatset** (``<str>``)
-        The path to a dataset in ``source``.
-
-:options:
-
-    **dest_dataset**  (``<str>``)
-        The path to a dataset in ``dest``.
-        If not specified, it is taken equal to ``source_dataset``.
+:param h5py.File source: The source HDF5-archive.
+:param h5py.File dest: The destination HDF5-archive.
+:param list source_datatsets: List of HDF5-paths to datasets in ``source``.
+:param list dest_datasets: List of HDF5-paths to datasets in ``dest``, defaults to ``source_datasets``.
     '''
 
     if not dest_dataset:
@@ -607,19 +551,10 @@ def allequal(source, dest, source_datasets, dest_datasets=None):
     r'''
 Check that all listed datasets are equal in both files.
 
-:arguments:
-
-    **source, dest** (``<h5py.File>``)
-        The source and destination HDF5-archives.
-
-    **source_datatsets** (``<list<str>>``)
-        A list of paths to datasets in "source".
-
-:options:
-
-    **dest_datasets**  (``<list<str>>``)
-        A list of paths to datasets in "dest".
-        If not specified, it is taken equal to "source_datasets".
+:param h5py.File source: The source HDF5-archive.
+:param h5py.File dest: The destination HDF5-archive.
+:param list source_datatsets: List of HDF5-paths to datasets in ``source``.
+:param list dest_datasets: List of HDF5-paths to datasets in ``dest``, defaults to ``source_datasets``.
     '''
 
     if not dest_datasets:
@@ -636,21 +571,14 @@ def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
     r'''
 Copy a dataset from one file to another. This function also copies possible attributes.
 
-:arguments:
+:param h5py.File source: The source HDF5-archive.
+:param h5py.File dest: The destination HDF5-archive.
 
-    **source, dest** (``<h5py.File>``)
-        The source and destination HDF5-archives.
+:type paths: str, list
+:param paths: (List of) HDF5-path(s) to copy.
 
-    **paths** (``<str>``, ``<list<str>>``)
-        The path(s) to copy.
-
-:options:
-
-    **compress** ([``False``] | ``True``)
-        If ``True`` compression is applied to the destination dataset(s).
-
-    **double_to_float** ([``False``] | ``True``)
-        If ``True`` doubles are converted to floats before copying the dataset(s).
+:param bool compress: Compress the destination dataset(s).
+:param bool double_to_float: Convert doubles to floats before copying.
     '''
 
     if type(paths) != list:
