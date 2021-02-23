@@ -17,7 +17,7 @@ with h5py.File('a.hdf5', 'w') as source:
 
 expected_output = ['desc : Example'] + [str(a)]
 
-output = run('G5print a.hdf5 -a "/a"')
+output = run('G5print -a a.hdf5 "/a"')
 
 os.remove('a.hdf5')
 

@@ -1,17 +1,26 @@
 '''G5check
-    Try reading datasets. In case of reading failure the path is printed (otherwise nothing is
-    printed).
+    Try reading datasets.
+    In case of reading failure the path is printed (otherwise nothing is printed).
 
-Usage:
-    G5check <source> [options]
+:usage:
 
-Arguments:
-    <source>        HDF5-file.
+    G5check [options] <source>
 
-Options:
-    -b, --basic     Only try getting a list of datasets, skip trying to read them.
-    -h, --help      Show help.
-        --version   Show version.
+:arguments:
+
+    <source>
+        HDF5-file.
+
+:options:
+
+    -b, --basic
+        Only try getting a list of datasets, skip trying to read them.
+
+    -h, --help
+        Show help.
+
+    --version
+        Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
 '''
@@ -19,7 +28,7 @@ Options:
 from .. import verify
 from .. import getdatasets
 from .. import version
-import docopt
+import argparse
 import h5py
 import os
 import warnings
@@ -32,9 +41,6 @@ def check_isfile(fname):
 
 
 def read(filename, check):
-    r'''
-Read (and check) all datasets.
-    '''
 
     with h5py.File(filename, 'r') as source:
 
@@ -45,17 +51,28 @@ Read (and check) all datasets.
 
 
 def main():
-    r'''
-Main function.
-    '''
-
-    args = docopt.docopt(__doc__, version=version)
-
-    check_isfile(args['<source>'])
-
-    read(args['<source>'], not args['--basic'])
 
     try:
-        read(args['<source>'], not args['--basic'])
-    except:
-        print(args['<source>'])
+
+        class Parser(argparse.ArgumentParser):
+            def print_help(self):
+                print(__doc__)
+
+        parser = Parser()
+        parser.add_argument('-b', '--basic', required=False, action='store_true')
+        parser.add_argument('-v', '--version', action='version', version=version)
+        parser.add_argument('source')
+        args = parser.parse_args()
+
+        check_isfile(args.source)
+        read(args.source, not args.basic)
+
+    except Exception as e:
+
+        print(e)
+        return 1
+
+
+if __name__ == '__main__':
+
+    main()
