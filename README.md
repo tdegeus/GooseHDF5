@@ -1,6 +1,7 @@
 [![CI](https://github.com/tdegeus/GooseHDF5/workflows/CI/badge.svg)](https://github.com/tdegeus/GooseHDF5/actions)
 [![Documentation Status](https://readthedocs.org/projects/goosehdf5/badge/?version=latest)](http://goosehdf5.readthedocs.io/en/latest/?badge=latest)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/goosehdf5.svg)](https://anaconda.org/conda-forge/goosehdf5)
+[![PyPi release](https://img.shields.io/pypi/v/GooseHDF5.svg)](https://pypi.org/project/GooseHDF5/)
 
 # GooseHDF5
 
