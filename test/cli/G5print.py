@@ -6,7 +6,7 @@ import numpy as np
 
 def run(cmd):
     out = list(filter(None, subprocess.check_output(cmd, shell=True).decode('utf-8').split('\n')))
-    return out
+    return [i.rstrip().replace('\r', '') for i in out]
 
 
 a = np.random.random(5)
@@ -17,7 +17,7 @@ with h5py.File('a.hdf5', 'w') as source:
 
 expected_output = ['desc : Example'] + [str(a)]
 
-output = run('G5print a.hdf5 -a "/a"')
+output = run('G5print -a a.hdf5 "/a"')
 
 os.remove('a.hdf5')
 

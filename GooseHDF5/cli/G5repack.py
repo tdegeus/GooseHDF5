@@ -2,17 +2,28 @@
     Read and write a HDF5 file, to write it more efficiently by removing features like
     extendible datasets.
 
-Usage:
+:usage:
+
     G5repack [options] <source>...
 
-Arguments:
-    <source>    HDF5-file.
+:arguments:
 
-Options:
-    -c, --compress  Apply compression (using the loss-less GZip algorithm).
-    -f, --float     Store doubles as floats.
-    -h, --help      Show help.
-        --version   Show version.
+    <source>
+        HDF5-file.
+
+:options:
+
+    -c, --compress
+        Apply compression (using the loss-less GZip algorithm).
+
+    -f, --float
+        Store doubles as floats.
+
+    -h, --help
+        Show help.
+
+    --version
+        Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
 '''
@@ -20,8 +31,8 @@ Options:
 from .. import isnumeric
 from .. import getpaths
 from .. import copy_dataset
-from .. import __version__
-import docopt
+from .. import version
+import argparse
 import h5py
 import os
 import tempfile
@@ -35,17 +46,39 @@ def check_isfile(fname):
 
 def main():
 
-    args = docopt.docopt(__doc__, version=__version__)
-    tempname = next(tempfile._get_candidate_names())
+    try:
 
-    for filename in args['<source>']:
+        class Parser(argparse.ArgumentParser):
+            def print_help(self):
+                print(__doc__)
 
-        print(filename)
+        parser = Parser()
+        parser.add_argument('-c', '--compress', required=False, action='store_true')
+        parser.add_argument('-f', '--float', required=False, action='store_true')
+        parser.add_argument('-v', '--version', action='version', version=version)
+        parser.add_argument('source', nargs='+')
+        args = parser.parse_args()
 
-        check_isfile(filename)
+        tempname = next(tempfile._get_candidate_names())
 
-        with h5py.File(filename, 'r') as source:
-            with h5py.File(tempname, 'w') as tmp:
-                copy_dataset(source, tmp, getpaths(source), args['--compress'], args['--float'])
+        for filename in args.source:
 
-        os.replace(tempname, filename)
+            print(filename)
+
+            check_isfile(filename)
+
+            with h5py.File(filename, 'r') as source:
+                with h5py.File(tempname, 'w') as tmp:
+                    copy_dataset(source, tmp, getpaths(source), args.compress, args.float)
+
+            os.replace(tempname, filename)
+
+    except Exception as e:
+
+        print(e)
+        return 1
+
+
+if __name__ == '__main__':
+
+    main()

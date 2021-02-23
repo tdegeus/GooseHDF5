@@ -1,29 +1,42 @@
 '''G5compare
-  Compare two HDF5 files. If the function does not output anything all datasets are present in both
-  files, and all the content of the datasets is equal.
-  Each output line corresponds to a mismatch between the files.
+    Compare two HDF5 files. If the function does not output anything all datasets are present in both
+    files, and all the content of the datasets is equal.
+    Each output line corresponds to a mismatch between the files.
 
-Usage:
-  G5compare [options] [--renamed ARG]... <source> <other>
+:usage:
 
-Arguments:
-  <source>    HDF5-file.
-  <other>     HDF5-file.
+    G5compare [options] <source> <other>
 
-Options:
-  -t, --dtype           Verify that the type of the datasets match.
-  -r, --renamed=ARG     Renamed paths, separated by a separator (see below).
-  -s, --ifs=ARG         Separator used to separate renamed fields. [default: :]
-  -h, --help            Show help.
-      --version         Show version.
+:arguments:
+
+    <source>
+        HDF5-file.
+
+    <other>
+        HDF5-file.
+
+:options:
+
+    -t, --dtype
+        Verify that the type of the datasets match.
+
+    -r, --renamed=ARG
+        Renamed paths: this option takes two arguments, one for ``source`` and one for ``other``.
+        It can repeated, e.g. ``G5compare a.h5 b.h5 -r /a /b  -r /c /d``
+
+    -h, --help
+        Show help.
+
+    --version
+        Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
 '''
 
 from .. import equal
 from .. import getpaths
-from .. import __version__
-import docopt
+from .. import version
+import argparse
 import h5py
 import os
 import sys
@@ -119,19 +132,35 @@ renamed = [['source_name1', 'other_name1'], ['source_name2', 'other_name2'], ...
 
 
 def main():
-    r'''
-Main function.
-    '''
 
-    args = docopt.docopt(__doc__, version=__version__)
+    try:
 
-    check_isfile(args['<source>'])
-    check_isfile(args['<other>'])
+        class Parser(argparse.ArgumentParser):
+            def print_help(self):
+                print(__doc__)
 
-    if len(args['--renamed']) == 0:
-        check_plain(args['<source>'], args['<other>'], args['--dtype'])
-        sys.exit(0)
+        parser = Parser()
+        parser.add_argument('-t', '--dtype', required=False, action='store_true')
+        parser.add_argument('-r', '--renamed', required=False, nargs=2, action='append')
+        parser.add_argument('-v', '--version', action='version', version=version)
+        parser.add_argument('source')
+        parser.add_argument('other')
+        args = parser.parse_args()
 
-    renamed = [i.split(args['--ifs']) for i in args['--renamed']]
+        check_isfile(args.source)
+        check_isfile(args.other)
 
-    check_renamed(args['<source>'], args['<other>'], renamed, args['--dtype'])
+        if not args.renamed:
+            check_plain(args.source, args.other, args.dtype)
+            return 0
+
+        check_renamed(args.source, args.other, args.renamed, args.dtype)
+
+    except Exception as e:
+
+        print(e)
+        return 1
+
+if __name__ == '__main__':
+
+    main()

@@ -1,27 +1,44 @@
 '''G5list
     List datasets (or groups of datasets) in a HDF5-file.
 
-Usage:
-    G5list [options] [--fold ARG]... <source>
+:usage:
 
-Arguments:
-    <source>    HDF5-file.
+    G5list [options] <source>
 
-Options:
-    -f, --fold=ARG        Fold paths.
-    -d, --max-depth=ARG   Maximum depth to display.
-    -r, --root=ARG        Start a certain point in the path-tree. [default: /]
-    -i, --info            Print information: shape, dtype.
-    -l, --long            As above but will all attributes.
-    -h, --help            Show help.
-        --version         Show version.
+:arguments:
+
+    <source>
+        HDF5-file.
+
+:options:
+
+    -f, --fold=ARG
+        Fold paths. Can be repeated.
+
+    -d, --max-depth=ARG
+        Maximum depth to display.
+
+    -r, --root=ARG
+        Start a certain point in the path-tree. [default: /]
+
+    -i, --info
+        Print information: shape, dtype.
+
+    -l, --long
+        As above but will all attributes.
+
+    -h, --help
+        Show help.
+
+    --version
+        Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
 '''
 
 from .. import getpaths
-from .. import __version__
-import docopt
+from .. import version
+import argparse
 import h5py
 import os
 import warnings
@@ -121,25 +138,45 @@ def print_attribute(source, paths):
             print('')
 
 def main():
-    r'''
-Main function.
-    '''
 
-    args = docopt.docopt(__doc__, version=__version__)
+    try:
 
-    check_isfile(args['<source>'])
+        class Parser(argparse.ArgumentParser):
+            def print_help(self):
+                print(__doc__)
 
-    with h5py.File(args['<source>'], 'r') as source:
+        parser = Parser()
+        parser.add_argument('-f', '--fold', required=False, action='append')
+        parser.add_argument('-d', '--max-depth', required=False, type=int)
+        parser.add_argument('-r', '--root', required=False, default='/')
+        parser.add_argument('-i', '--info', required=False, action='store_true')
+        parser.add_argument('-l', '--long', required=False, action='store_true')
+        parser.add_argument('-v', '--version', action='version', version=version)
+        parser.add_argument('source')
+        args = parser.parse_args()
 
-        paths = getpaths(
-            source,
-            root=args['--root'],
-            max_depth=args['--max-depth'],
-            fold=args['--fold'])
+        check_isfile(args.source)
 
-        if args['--info']:
-            print_info(source, paths)
-        elif args['--long']:
-            print_attribute(source, paths)
-        else:
-            print_plain(source, paths)
+        with h5py.File(args.source, 'r') as source:
+
+            paths = getpaths(
+                source,
+                root=args.root,
+                max_depth=args.max_depth,
+                fold=args.fold)
+
+            if args.info:
+                print_info(source, paths)
+            elif args.long:
+                print_attribute(source, paths)
+            else:
+                print_plain(source, paths)
+
+    except Exception as e:
+
+        print(e)
+        return 1
+
+if __name__ == '__main__':
+
+    main()

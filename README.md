@@ -1,5 +1,4 @@
-[![Travis](https://travis-ci.com/tdegeus/GooseHDF5.svg?branch=master)](https://travis-ci.com/tdegeus/GooseHDF5)
-[![Build status](https://ci.appveyor.com/api/projects/status/6cpocg96lf7v6djd?svg=true)](https://ci.appveyor.com/project/tdegeus/goosehdf5)
+[![CI](https://github.com/tdegeus/GooseHDF5/workflows/CI/badge.svg)](https://github.com/tdegeus/GooseHDF5/actions)
 [![Documentation Status](https://readthedocs.org/projects/goosehdf5/badge/?version=latest)](http://goosehdf5.readthedocs.io/en/latest/?badge=latest)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/goosehdf5.svg)](https://anaconda.org/conda-forge/goosehdf5)
 
