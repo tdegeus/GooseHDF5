@@ -6,7 +6,7 @@ import numpy as np
 
 def run(cmd):
     out = list(filter(None, subprocess.check_output(cmd, shell=True).decode('utf-8').split('\n')))
-    return [i.rstrip() for i in out]
+    return [i.rstrip().replace('\r', '') for i in out]
 
 
 with h5py.File('a.hdf5', 'w') as source:

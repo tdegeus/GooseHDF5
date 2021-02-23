@@ -6,7 +6,7 @@ import numpy as np
 
 def run(cmd):
     out = list(filter(None, subprocess.check_output(cmd, shell=True).decode('utf-8').split('\n')))
-    return out
+    return [i.rstrip().replace('\r', '') for i in out]
 
 
 a = np.random.random(5)
