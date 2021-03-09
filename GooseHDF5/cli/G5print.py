@@ -27,6 +27,9 @@
     --no-data
         Don't print data.
 
+    -f, --full
+        Print full array.
+
     -h, --help
         Show help.
 
@@ -45,6 +48,7 @@ import re
 import os
 import sys
 import warnings
+import numpy as np
 warnings.filterwarnings("ignore")
 
 
@@ -60,6 +64,7 @@ def main():
         parser.add_argument('-r', '--regex', required=False, action='store_true')
         parser.add_argument('-i', '--info', required=False, action='store_true')
         parser.add_argument('-a', '--attrs', required=False, action='store_true')
+        parser.add_argument('-f', '--full', required=False, action='store_true')
         parser.add_argument(      '--no-data', required=False, action='store_true')
         parser.add_argument('-v', '--version', action='version', version=version)
         parser.add_argument('source')
@@ -69,6 +74,9 @@ def main():
         if not os.path.isfile(args.source):
             print('File does not exist')
             return 1
+
+        if args.full:
+            np.set_printoptions(threshold=sys.maxsize)
 
         with h5py.File(args.source, 'r') as source:
 
