@@ -15,7 +15,16 @@
 
 :options:
 
-    -r, --regex
+    -f, --fold=ARG
+        Fold paths. Can be repeated.
+
+    -d, --max-depth=ARG
+        Maximum depth to display.
+
+    -r, --root=ARG
+        Start a certain point in the path-tree. [default: /]
+
+    --regex
         Evaluate dataset name as a regular expression.
 
     -i, --info
@@ -27,7 +36,7 @@
     --no-data
         Don't print data.
 
-    -f, --full
+    --full
         Print full array.
 
     -h, --help
@@ -61,10 +70,13 @@ def main():
                 print(__doc__)
 
         parser = Parser()
-        parser.add_argument('-r', '--regex', required=False, action='store_true')
+        parser.add_argument('-f', '--fold', required=False, action='append')
+        parser.add_argument('-d', '--max-depth', required=False, type=int)
+        parser.add_argument('-r', '--root', required=False, default='/')
+        parser.add_argument(      '--regex', required=False, action='store_true')
         parser.add_argument('-i', '--info', required=False, action='store_true')
         parser.add_argument('-a', '--attrs', required=False, action='store_true')
-        parser.add_argument('-f', '--full', required=False, action='store_true')
+        parser.add_argument(      '--full', required=False, action='store_true')
         parser.add_argument(      '--no-data', required=False, action='store_true')
         parser.add_argument('-v', '--version', action='version', version=version)
         parser.add_argument('source')
@@ -82,10 +94,10 @@ def main():
 
             if len(args.dataset) == 0:
                 print_header = True
-                datasets = list(getpaths(source))
+                datasets = list(getpaths(source, root=args.root, max_depth=args.max_depth, fold=args.fold))
             elif args.regex:
                 print_header = True
-                paths = getpaths(source)
+                paths = getpaths(source, root=args.root, max_depth=args.max_depth, fold=args.fold)
                 datasets = []
                 for dataset in args.dataset:
                     datasets += [path for path in paths if re.match(dataset, path)]
