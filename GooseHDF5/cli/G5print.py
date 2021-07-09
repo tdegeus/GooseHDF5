@@ -1,5 +1,4 @@
-'''G5print
-    Print datasets in a HDF5-file.
+'''Print datasets in a HDF5-file.
 
 :usage:
 

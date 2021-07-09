@@ -1,6 +1,6 @@
-'''G5compare
-    Compare two HDF5 files. If the function does not output anything all datasets are present in both
-    files, and all the content of the datasets is equal.
+'''Compare two HDF5 files.
+    If the function does not output anything all datasets are present in both files,
+    and all the content of the datasets is equal.
     Each output line corresponds to a mismatch between the files.
 
 :usage:

@@ -1,6 +1,5 @@
-'''G5repack
-    Read and write a HDF5 file, to write it more efficiently by removing features like
-    extendible datasets.
+'''Read and write a HDF5 file.
+    This allows a compacter file by removing features like extendible datasets.
 
 :usage:
 

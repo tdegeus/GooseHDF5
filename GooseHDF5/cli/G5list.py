@@ -1,5 +1,4 @@
-'''G5list
-    List datasets (or groups of datasets) in a HDF5-file.
+'''List datasets (or groups of datasets) in a HDF5-file.
 
 :usage:
 

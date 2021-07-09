@@ -1,5 +1,4 @@
-'''G5check
-    Try reading datasets.
+'''Try reading datasets.
     In case of reading failure the path is printed (otherwise nothing is printed).
 
 :usage:
