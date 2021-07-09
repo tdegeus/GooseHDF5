@@ -159,11 +159,7 @@ def main():
 
         with h5py.File(args.source, 'r') as source:
 
-            paths = getpaths(
-                source,
-                root=args.root,
-                max_depth=args.max_depth,
-                fold=args.fold)
+            paths = getpaths(source, root=args.root, max_depth=args.max_depth, fold=args.fold)
 
             if args.info:
                 print_info(source, paths)
