@@ -1,5 +1,4 @@
-'''G5repair
-    Extract readable data from a HDF5-file and copy it to a new HDF5-file.
+'''Extract readable data from a HDF5-file and copy it to a new HDF5-file.
 
 :usage:
 
