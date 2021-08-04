@@ -58,6 +58,25 @@ Print the paths to all datasets (one per line).
         print(path)
 
 
+def gettype(source, path):
+
+    dset = source.get(path, getlink=True)
+
+    if isinstance(dset, h5py.SoftLink):
+        return 'SL'
+
+    if isinstance(dset, h5py.HardLink):
+        return 'HL'
+
+    if isinstance(dset, h5py.ExternalLink):
+        return 'EL'
+
+    if isinstance(dset, h5py.DataSet):
+        return 'DS'
+
+    return 'GR'
+
+
 def print_info(source, paths):
     r'''
 Print the paths to all datasets (one per line), including type information.
@@ -74,7 +93,8 @@ Print the paths to all datasets (one per line), including type information.
         'size': [],
         'shape': [],
         'dtype': [],
-        'attrs': []}
+        'attrs': [],
+        'type': []}
 
     for path in paths:
         if path in source:
@@ -84,30 +104,33 @@ Print the paths to all datasets (one per line), including type information.
             out['shape'] += [str(data.shape)]
             out['dtype'] += [str(data.dtype)]
             out['attrs'] += [str(len(data.attrs))]
+            out['type'] += [gettype(source, path)]
         else:
             out['path'] += [path]
             out['size'] += ['-']
             out['shape'] += ['-']
             out['dtype'] += ['-']
             out['attrs'] += ['-']
+            out['type'] += ['-']
 
     width = {}
     for key in out:
         width[key] = max([len(i) for i in out[key]])
         width[key] = max(width[key], len(key))
 
-    fmt = '{0:%ds} {1:%ds} {2:%ds} {3:%ds}' % \
-        (width['path'], width['size'], width['shape'], width['dtype'])
+    fmt = '{0:%ds} {1:%ds} {2:%ds} {3:%ds} {4:%ds}' % \
+        (width['path'], width['size'], width['shape'], width['dtype'], width['type'])
 
     if has_attributes(out['attrs']):
-        fmt += ' {4:%ds}' % width['attrs']
+        fmt += ' {5:%ds}' % width['attrs']
 
-    print(fmt.format('path', 'size', 'shape', 'dtype', 'attrs'))
+    print(fmt.format('path', 'size', 'shape', 'dtype', 'type', 'attrs'))
     print(fmt.format(
             '=' * width['path'],
             '=' * width['size'],
             '=' * width['shape'],
             '=' * width['dtype'],
+            '=' * width['type'],
             '=' * width['attrs']))
 
     for i in range(len(out['path'])):
@@ -116,6 +139,7 @@ Print the paths to all datasets (one per line), including type information.
             out['size'][i],
             out['shape'][i],
             out['dtype'][i],
+            out['type'][i],
             out['attrs'][i]))
 
 
