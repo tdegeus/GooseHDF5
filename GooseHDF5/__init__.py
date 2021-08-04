@@ -421,7 +421,7 @@ In addition, a ``root`` (path prefix) for the destination datasets name can be s
 
 :param h5py.File source: The source HDF5-archive.
 :param h5py.File dest: The destination HDF5-archive.
-:param list source_datatsets: List of HDF5-paths to datasets in ``source``.
+:param list source_datasets: List of HDF5-paths to datasets in ``source``.
 :param list dest_datasets: List of HDF5-paths to datasets in ``dest``, defaults to ``source_datasets``.
 :param str root: Path prefix for all ``dest_datasets``.
     '''
@@ -530,7 +530,7 @@ Check that a dataset is equal in both files.
 
 :param h5py.File source: The source HDF5-archive.
 :param h5py.File dest: The destination HDF5-archive.
-:param list source_datatsets: List of HDF5-paths to datasets in ``source``.
+:param list source_datasets: List of HDF5-paths to datasets in ``source``.
 :param list dest_datasets: List of HDF5-paths to datasets in ``dest``, defaults to ``source_datasets``.
     '''
 
@@ -552,7 +552,7 @@ Check that all listed datasets are equal in both files.
 
 :param h5py.File source: The source HDF5-archive.
 :param h5py.File dest: The destination HDF5-archive.
-:param list source_datatsets: List of HDF5-paths to datasets in ``source``.
+:param list source_datasets: List of HDF5-paths to datasets in ``source``.
 :param list dest_datasets: List of HDF5-paths to datasets in ``dest``, defaults to ``source_datasets``.
     '''
 
