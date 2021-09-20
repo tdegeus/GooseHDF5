@@ -46,4 +46,3 @@ G5repack
 --------
 
 .. automodule:: GooseHDF5.cli.G5repack
-

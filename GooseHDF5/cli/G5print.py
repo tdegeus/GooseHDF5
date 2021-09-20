@@ -1,4 +1,4 @@
-'''Print datasets in a HDF5-file.
+"""Print datasets in a HDF5-file.
 
 :usage:
 
@@ -45,18 +45,19 @@
         Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
-'''
+"""
+import argparse
+import os
+import re
+import sys
+import warnings
 
+import h5py
+import numpy as np
 
 from .. import getpaths
 from .. import version
-import argparse
-import h5py
-import re
-import os
-import sys
-import warnings
-import numpy as np
+
 warnings.filterwarnings("ignore")
 
 
@@ -69,34 +70,40 @@ def main():
                 print(__doc__)
 
         parser = Parser()
-        parser.add_argument('-f', '--fold', required=False, action='append')
-        parser.add_argument('-d', '--max-depth', required=False, type=int)
-        parser.add_argument('-r', '--root', required=False, default='/')
-        parser.add_argument(      '--regex', required=False, action='store_true')
-        parser.add_argument('-i', '--info', required=False, action='store_true')
-        parser.add_argument('-a', '--attrs', required=False, action='store_true')
-        parser.add_argument(      '--full', required=False, action='store_true')
-        parser.add_argument(      '--no-data', required=False, action='store_true')
-        parser.add_argument('-v', '--version', action='version', version=version)
-        parser.add_argument('source')
-        parser.add_argument('dataset', nargs='*')
+        parser.add_argument("-f", "--fold", required=False, action="append")
+        parser.add_argument("-d", "--max-depth", required=False, type=int)
+        parser.add_argument("-r", "--root", required=False, default="/")
+        parser.add_argument("--regex", required=False, action="store_true")
+        parser.add_argument("-i", "--info", required=False, action="store_true")
+        parser.add_argument("-a", "--attrs", required=False, action="store_true")
+        parser.add_argument("--full", required=False, action="store_true")
+        parser.add_argument("--no-data", required=False, action="store_true")
+        parser.add_argument("-v", "--version", action="version", version=version)
+        parser.add_argument("source")
+        parser.add_argument("dataset", nargs="*")
         args = parser.parse_args()
 
         if not os.path.isfile(args.source):
-            print('File does not exist')
+            print("File does not exist")
             return 1
 
         if args.full:
             np.set_printoptions(threshold=sys.maxsize)
 
-        with h5py.File(args.source, 'r') as source:
+        with h5py.File(args.source, "r") as source:
 
             if len(args.dataset) == 0:
                 print_header = True
-                datasets = list(getpaths(source, root=args.root, max_depth=args.max_depth, fold=args.fold))
+                datasets = list(
+                    getpaths(
+                        source, root=args.root, max_depth=args.max_depth, fold=args.fold
+                    )
+                )
             elif args.regex:
                 print_header = True
-                paths = getpaths(source, root=args.root, max_depth=args.max_depth, fold=args.fold)
+                paths = getpaths(
+                    source, root=args.root, max_depth=args.max_depth, fold=args.fold
+                )
                 datasets = []
                 for dataset in args.dataset:
                     datasets += [path for path in paths if re.match(dataset, path)]
@@ -106,7 +113,7 @@ def main():
 
             for dataset in datasets:
                 if dataset not in source:
-                    print('"{0:s}" not in "{1:s}"'.format(dataset, source.filename))
+                    print(f'"{dataset}" not in "{source.filename}"')
                     return 1
 
             for i, dataset in enumerate(datasets):
@@ -114,31 +121,33 @@ def main():
                 data = source[dataset]
 
                 if args.info:
-                    print('path = {0:s}, size = {1:s}, shape = {2:s}, dtype = {3:s}'.format(
-                        dataset,
-                        str(data.size),
-                        str(data.shape),
-                        str(data.dtype),
-                    ))
+                    print(
+                        "path = {:s}, size = {:s}, shape = {:s}, dtype = {:s}".format(
+                            dataset,
+                            str(data.size),
+                            str(data.shape),
+                            str(data.dtype),
+                        )
+                    )
                 elif print_header:
                     print(dataset)
 
                 if args.attrs:
                     for key in data.attrs:
-                        print(key + ' : ' + str(data.attrs[key]))
+                        print(key + " : " + str(data.attrs[key]))
 
                 if not args.no_data:
                     print(data[...])
 
                 if len(datasets) > 1 and i < len(datasets) - 1:
-                    print('')
+                    print("")
 
     except Exception as e:
 
         print(e)
         return 1
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     main()
-

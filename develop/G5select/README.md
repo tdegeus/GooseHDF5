@@ -21,7 +21,7 @@ The command
 ../../bin/HDF5pp_select -j select.json old.hdf5
 ```
 
-should prompt 
+should prompt
 
 ```bash
 The following paths are not copied:
@@ -29,12 +29,12 @@ The following paths are not copied:
 Continue [y/n]? y
 ```
 
-Then 
+Then
 
 ```bash
 ../../bin/HDF5pp_list new.hdf5
 ```
-should give 
+should give
 
 ```bash
 /data
