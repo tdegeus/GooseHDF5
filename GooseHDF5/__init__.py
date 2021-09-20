@@ -485,14 +485,14 @@ def _equal_value(a, b):
         else:
             return False
 
+    if a.size != b.size:
+        return False
+
     if np.issubdtype(a.dtype, np.number) and np.issubdtype(b.dtype, np.number):
         if np.allclose(a, b):
             return True
         else:
             return False
-
-    if a.size != b.size:
-        return False
 
     if a.size == 1:
         if a[...] == b[...]:
