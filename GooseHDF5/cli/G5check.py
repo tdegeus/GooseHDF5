@@ -1,4 +1,4 @@
-'''Try reading datasets.
+"""Try reading datasets.
     In case of reading failure the path is printed (otherwise nothing is printed).
 
 :usage:
@@ -22,26 +22,28 @@
         Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
-'''
-
-from .. import verify
-from .. import getdatasets
-from .. import version
+"""
 import argparse
-import h5py
 import os
 import warnings
+
+import h5py
+
+from .. import getdatasets
+from .. import verify
+from .. import version
+
 warnings.filterwarnings("ignore")
 
 
 def check_isfile(fname):
     if not os.path.isfile(fname):
-        raise IOError('"{0:s}" does not exist'.format(fname))
+        raise OSError(f'"{fname}" does not exist')
 
 
 def read(filename, check):
 
-    with h5py.File(filename, 'r') as source:
+    with h5py.File(filename, "r") as source:
 
         paths = getdatasets(source)
 
@@ -58,9 +60,9 @@ def main():
                 print(__doc__)
 
         parser = Parser()
-        parser.add_argument('-b', '--basic', required=False, action='store_true')
-        parser.add_argument('-v', '--version', action='version', version=version)
-        parser.add_argument('source')
+        parser.add_argument("-b", "--basic", required=False, action="store_true")
+        parser.add_argument("-v", "--version", action="version", version=version)
+        parser.add_argument("source")
         args = parser.parse_args()
 
         check_isfile(args.source)
@@ -72,6 +74,6 @@ def main():
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     main()

@@ -1,4 +1,4 @@
-'''Extract readable data from a HDF5-file and copy it to a new HDF5-file.
+"""Extract readable data from a HDF5-file and copy it to a new HDF5-file.
 
 :usage:
 
@@ -24,23 +24,26 @@
         Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
-'''
-
-from .. import getdatasets
-from .. import copydatasets
-from .. import verify
-from .. import version
+"""
 import argparse
-import h5py
 import os
 import sys
 import warnings
+
+import click
+import h5py
+
+from .. import copydatasets
+from .. import getdatasets
+from .. import verify
+from .. import version
+
 warnings.filterwarnings("ignore")
 
 
 def check_isfile(fname):
     if not os.path.isfile(fname):
-        raise IOError('"{0:s}" does not exist'.format(fname))
+        raise OSError(f'"{fname}" does not exist')
 
 
 def main():
@@ -52,23 +55,23 @@ def main():
                 print(__doc__)
 
         parser = Parser()
-        parser.add_argument('-f', '--force', required=False, action='store_true')
-        parser.add_argument('-v', '--version', action='version', version=version)
-        parser.add_argument('source')
-        parser.add_argument('destination')
+        parser.add_argument("-f", "--force", required=False, action="store_true")
+        parser.add_argument("-v", "--version", action="version", version=version)
+        parser.add_argument("source")
+        parser.add_argument("destination")
         args = parser.parse_args()
 
         check_isfile(args.source)
 
         if os.path.isfile(args.destination) and not args.force:
-            if not click.confirm('File "{0:s}" exists, continue [y/n]? '.format(args.destination)):
+            if not click.confirm(f'File "{args.destination}" exists, continue [y/n]? '):
                 sys.exit(1)
 
-        with h5py.File(args.source, 'r') as source:
+        with h5py.File(args.source, "r") as source:
 
             paths = verify(source, getdatasets(source))
 
-            with h5py.File(args.destination, 'w') as dest:
+            with h5py.File(args.destination, "w") as dest:
                 copydatasets(source, dest, paths)
 
     except Exception as e:
@@ -77,6 +80,6 @@ def main():
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     main()

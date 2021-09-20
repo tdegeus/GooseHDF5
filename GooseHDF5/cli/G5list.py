@@ -1,4 +1,4 @@
-'''List datasets (or groups of datasets) in a HDF5-file.
+"""List datasets (or groups of datasets) in a HDF5-file.
 
 :usage:
 
@@ -33,90 +33,97 @@
         Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
-'''
+"""
+import argparse
+import os
+import warnings
+
+import h5py
 
 from .. import getpaths
 from .. import version
-import argparse
-import h5py
-import os
-import warnings
+
 warnings.filterwarnings("ignore")
 
 
 def check_isfile(fname):
     if not os.path.isfile(fname):
-        raise IOError('"{0:s}" does not exist'.format(fname))
+        raise OSError(f'"{fname}" does not exist')
 
 
 def print_plain(source, paths):
-    r'''
-Print the paths to all datasets (one per line).
-    '''
+    r"""
+    Print the paths to all datasets (one per line).
+    """
 
     for path in paths:
         print(path)
 
 
 def print_info(source, paths):
-    r'''
-Print the paths to all datasets (one per line), including type information.
-    '''
+    r"""
+    Print the paths to all datasets (one per line), including type information.
+    """
 
     def has_attributes(lst):
         for i in lst:
-            if i != '-' and i != '0':
+            if i != "-" and i != "0":
                 return True
         return False
 
-    out = {
-        'path': [],
-        'size': [],
-        'shape': [],
-        'dtype': [],
-        'attrs': []}
+    out = {"path": [], "size": [], "shape": [], "dtype": [], "attrs": []}
 
     for path in paths:
         if path in source:
             data = source[path]
-            out['path'] += [path]
-            out['size'] += [str(data.size)]
-            out['shape'] += [str(data.shape)]
-            out['dtype'] += [str(data.dtype)]
-            out['attrs'] += [str(len(data.attrs))]
+            out["path"] += [path]
+            out["size"] += [str(data.size)]
+            out["shape"] += [str(data.shape)]
+            out["dtype"] += [str(data.dtype)]
+            out["attrs"] += [str(len(data.attrs))]
         else:
-            out['path'] += [path]
-            out['size'] += ['-']
-            out['shape'] += ['-']
-            out['dtype'] += ['-']
-            out['attrs'] += ['-']
+            out["path"] += [path]
+            out["size"] += ["-"]
+            out["shape"] += ["-"]
+            out["dtype"] += ["-"]
+            out["attrs"] += ["-"]
 
     width = {}
     for key in out:
-        width[key] = max([len(i) for i in out[key]])
+        width[key] = max(len(i) for i in out[key])
         width[key] = max(width[key], len(key))
 
-    fmt = '{0:%ds} {1:%ds} {2:%ds} {3:%ds}' % \
-        (width['path'], width['size'], width['shape'], width['dtype'])
+    fmt = "{0:%ds} {1:%ds} {2:%ds} {3:%ds}" % (
+        width["path"],
+        width["size"],
+        width["shape"],
+        width["dtype"],
+    )
 
-    if has_attributes(out['attrs']):
-        fmt += ' {4:%ds}' % width['attrs']
+    if has_attributes(out["attrs"]):
+        fmt += " {4:%ds}" % width["attrs"]
 
-    print(fmt.format('path', 'size', 'shape', 'dtype', 'attrs'))
-    print(fmt.format(
-            '=' * width['path'],
-            '=' * width['size'],
-            '=' * width['shape'],
-            '=' * width['dtype'],
-            '=' * width['attrs']))
+    print(fmt.format("path", "size", "shape", "dtype", "attrs"))
+    print(
+        fmt.format(
+            "=" * width["path"],
+            "=" * width["size"],
+            "=" * width["shape"],
+            "=" * width["dtype"],
+            "=" * width["attrs"],
+        )
+    )
 
-    for i in range(len(out['path'])):
-        print(fmt.format(
-            out['path'][i],
-            out['size'][i],
-            out['shape'][i],
-            out['dtype'][i],
-            out['attrs'][i]))
+    for i in range(len(out["path"])):
+        print(
+            fmt.format(
+                out["path"][i],
+                out["size"][i],
+                out["shape"][i],
+                out["dtype"][i],
+                out["attrs"][i],
+            )
+        )
 
 
 def print_attribute(source, paths):
@@ -126,15 +133,19 @@ def print_attribute(source, paths):
 
             data = source[path]
 
-            print('"{0:s}"'.format(path))
-            print('- prop: size = {0:s}, shape = {1:s}, dtype = {2:s}'.format(
-                str(data.size), str(data.shape), str(data.dtype)))
+            print(f'"{path}"')
+            print(
+                "- prop: size = {:s}, shape = {:s}, dtype = {:s}".format(
+                    str(data.size), str(data.shape), str(data.dtype)
+                )
+            )
 
             for key in data.attrs:
-                print('- attr: ' + key + ' = ')
-                print('        ' + str(data.attrs[key]))
+                print("- attr: " + key + " = ")
+                print("        " + str(data.attrs[key]))
 
-            print('')
+            print("")
+
 
 def main():
 
@@ -145,20 +156,22 @@ def main():
                 print(__doc__)
 
         parser = Parser()
-        parser.add_argument('-f', '--fold', required=False, action='append')
-        parser.add_argument('-d', '--max-depth', required=False, type=int)
-        parser.add_argument('-r', '--root', required=False, default='/')
-        parser.add_argument('-i', '--info', required=False, action='store_true')
-        parser.add_argument('-l', '--long', required=False, action='store_true')
-        parser.add_argument('-v', '--version', action='version', version=version)
-        parser.add_argument('source')
+        parser.add_argument("-f", "--fold", required=False, action="append")
+        parser.add_argument("-d", "--max-depth", required=False, type=int)
+        parser.add_argument("-r", "--root", required=False, default="/")
+        parser.add_argument("-i", "--info", required=False, action="store_true")
+        parser.add_argument("-l", "--long", required=False, action="store_true")
+        parser.add_argument("-v", "--version", action="version", version=version)
+        parser.add_argument("source")
         args = parser.parse_args()
 
         check_isfile(args.source)
 
-        with h5py.File(args.source, 'r') as source:
+        with h5py.File(args.source, "r") as source:
 
-            paths = getpaths(source, root=args.root, max_depth=args.max_depth, fold=args.fold)
+            paths = getpaths(
+                source, root=args.root, max_depth=args.max_depth, fold=args.fold
+            )
 
             if args.info:
                 print_info(source, paths)
@@ -172,6 +185,7 @@ def main():
         print(e)
         return 1
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     main()

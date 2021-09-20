@@ -14,4 +14,3 @@ should not delete `old.hdf5`, while
 ```
 
 should delete it.
-

@@ -1,4 +1,4 @@
-'''Read and write a HDF5 file.
+"""Read and write a HDF5 file.
     This allows a compacter file by removing features like extendible datasets.
 
 :usage:
@@ -25,23 +25,25 @@
         Show version.
 
 (c - MIT) T.W.J. de Geus | tom@geus.me | www.geus.me | github.com/tdegeus/GooseHDF5
-'''
-
-from .. import isnumeric
-from .. import getpaths
-from .. import copy_dataset
-from .. import version
+"""
 import argparse
-import h5py
 import os
 import tempfile
 import warnings
-import numpy as np
+
+import h5py
+
+from .. import copy_dataset
+from .. import getpaths
+from .. import version
+
 warnings.filterwarnings("ignore")
+
 
 def check_isfile(fname):
     if not os.path.isfile(fname):
-        raise IOError('"{0:s}" does not exist'.format(fname))
+        raise OSError(f'"{fname}" does not exist')
+
 
 def main():
 
@@ -52,10 +54,10 @@ def main():
                 print(__doc__)
 
         parser = Parser()
-        parser.add_argument('-c', '--compress', required=False, action='store_true')
-        parser.add_argument('-f', '--float', required=False, action='store_true')
-        parser.add_argument('-v', '--version', action='version', version=version)
-        parser.add_argument('source', nargs='+')
+        parser.add_argument("-c", "--compress", required=False, action="store_true")
+        parser.add_argument("-f", "--float", required=False, action="store_true")
+        parser.add_argument("-v", "--version", action="version", version=version)
+        parser.add_argument("source", nargs="+")
         args = parser.parse_args()
 
         tempname = next(tempfile._get_candidate_names())
@@ -66,9 +68,11 @@ def main():
 
             check_isfile(filename)
 
-            with h5py.File(filename, 'r') as source:
-                with h5py.File(tempname, 'w') as tmp:
-                    copy_dataset(source, tmp, getpaths(source), args.compress, args.float)
+            with h5py.File(filename, "r") as source:
+                with h5py.File(tempname, "w") as tmp:
+                    copy_dataset(
+                        source, tmp, getpaths(source), args.compress, args.float
+                    )
 
             os.replace(tempname, filename)
 
@@ -78,6 +82,6 @@ def main():
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     main()
