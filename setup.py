@@ -13,7 +13,7 @@ setup(
     packages=find_packages(),
     use_scm_version={"write_to": "GooseHDF5/_version.py"},
     setup_requires=["setuptools_scm"],
-    install_requires=["h5py"],
+    install_requires=["h5py", "click"],
     entry_points={
         "console_scripts": [
             "G5check = GooseHDF5.cli.G5check:main",
