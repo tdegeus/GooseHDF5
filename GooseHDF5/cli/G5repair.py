@@ -64,9 +64,7 @@ def main():
         check_isfile(args.source)
 
         if os.path.isfile(args.destination) and not args.force:
-            if not click.confirm(
-                f'File "{args.destination}" exists, continue [y/n]? '
-            ):
+            if not click.confirm(f'File "{args.destination}" exists, continue [y/n]? '):
                 sys.exit(1)
 
         with h5py.File(args.source, "r") as source:
