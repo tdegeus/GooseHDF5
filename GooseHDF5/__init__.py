@@ -485,11 +485,26 @@ def _equal_value(a, b):
     if a.size != b.size:
         return False
 
-    if np.issubdtype(a.dtype, np.number) and np.issubdtype(b.dtype, np.number):
+    if np.issubdtype(a.dtype, np.floating):
+        if not np.issubdtype(b.dtype, np.floating):
+            return False
         if np.allclose(a, b):
             return True
-        else:
+        return False
+
+    if np.issubdtype(a.dtype, np.integer):
+        if not np.issubdtype(b.dtype, np.integer):
             return False
+        if np.all(np.equal(a, b)):
+            return True
+        return False
+
+    if a.dtype == np.bool_:
+        if b.dtype != np.bool_:
+            return False
+        if np.all(np.equal(a, b)):
+            return True
+        return False
 
     if a.size == 1:
         if a[...] == b[...]:
@@ -497,7 +512,7 @@ def _equal_value(a, b):
         else:
             return False
 
-    return list(a) == list(b)
+    return list(a[...]) == list(b[...])
 
 
 def _equal(a, b):
