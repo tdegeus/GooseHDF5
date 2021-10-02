@@ -40,7 +40,8 @@ import warnings
 
 import h5py
 
-from .. import getdataset
+from .. import getdatasets
+from .. import getgroups
 from .. import version
 
 warnings.filterwarnings("ignore")
@@ -77,10 +78,15 @@ def print_info(source, paths):
         if path in source:
             data = source[path]
             out["path"] += [path]
-            out["size"] += [str(data.size)]
-            out["shape"] += [str(data.shape)]
-            out["dtype"] += [str(data.dtype)]
             out["attrs"] += [str(len(data.attrs))]
+            if isinstance(data, h5py.Dataset):
+                out["size"] += [str(data.size)]
+                out["shape"] += [str(data.shape)]
+                out["dtype"] += [str(data.dtype)]
+            else:
+                out["size"] += ["-"]
+                out["shape"] += ["-"]
+                out["dtype"] += ["-"]
         else:
             out["path"] += [path]
             out["size"] += ["-"]
@@ -134,11 +140,13 @@ def print_attribute(source, paths):
             data = source[path]
 
             print(f'"{path}"')
-            print(
-                "- prop: size = {:s}, shape = {:s}, dtype = {:s}".format(
-                    str(data.size), str(data.shape), str(data.dtype)
+
+            if isinstance(data, h5py.Dataset):
+                print(
+                    "- prop: size = {:s}, shape = {:s}, dtype = {:s}".format(
+                        str(data.size), str(data.shape), str(data.dtype)
+                    )
                 )
-            )
 
             for key in data.attrs:
                 print("- attr: " + key + " = ")
@@ -169,9 +177,15 @@ def main():
 
         with h5py.File(args.source, "r") as source:
 
-            paths = getdataset(
-                source, root=args.root, max_depth=args.max_depth, fold=args.fold
+            # Print datasets
+
+            paths = list(
+                getdatasets(
+                    source, root=args.root, max_depth=args.max_depth, fold=args.fold
+                )
             )
+            paths += list(getgroups(source, root=args.root, has_attrs=True))
+            paths = sorted(paths)
 
             if args.info:
                 print_info(source, paths)

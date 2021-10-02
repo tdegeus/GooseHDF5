@@ -40,9 +40,16 @@ import h5py
 
 from .. import equal
 from .. import getdatasets
+from .. import getgroups
 from .. import version
 
 warnings.filterwarnings("ignore")
+
+
+def getpaths(file):
+    paths = list(getdatasets(file))
+    paths += list(getgroups(file, has_attrs=True))
+    return paths
 
 
 def check_isfile(fname):
@@ -73,15 +80,15 @@ def _check_plain(source, other, check_dtype):
     Support function for "check_plain."
     """
 
-    for path in getdatasets(source):
+    for path in getpaths(source):
         if path not in other:
             print(f"-> {path}")
 
-    for path in getdatasets(other):
+    for path in getpaths(other):
         if path not in source:
             print(f"<- {path}")
 
-    for path in getdatasets(source):
+    for path in getpaths(source):
         if path in other:
             check_dataset(source, other, path, path, check_dtype)
 
@@ -100,8 +107,8 @@ def _check_renamed(source, other, renamed, check_dtype):
     Support function for "check_renamed."
     """
 
-    s2o = {i: i for i in list(getdatasets(source))}
-    o2s = {i: i for i in list(getdatasets(other))}
+    s2o = {i: i for i in list(getpaths(source))}
+    o2s = {i: i for i in list(getpaths(other))}
 
     for s, o in renamed:
         s2o[s] = o
