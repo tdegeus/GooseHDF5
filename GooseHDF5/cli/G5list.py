@@ -40,7 +40,7 @@ import warnings
 
 import h5py
 
-from .. import getpaths
+from .. import getdataset
 from .. import version
 
 warnings.filterwarnings("ignore")
@@ -169,7 +169,7 @@ def main():
 
         with h5py.File(args.source, "r") as source:
 
-            paths = getpaths(
+            paths = getdataset(
                 source, root=args.root, max_depth=args.max_depth, fold=args.fold
             )
 
