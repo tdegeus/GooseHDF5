@@ -46,9 +46,32 @@ def join(*args, root=False):
     return posixpath.join(*lst)
 
 
+def getgroups(file: h5py.File, root: str = "/", has_attrs=False):
+    """
+    Iterator to transverse all groups in a HDF5 file.
+
+    :param file: A HDF5-archive.
+    :param root: Start a certain point along the path-tree.
+    :param has_attrs: Return only groups that have attributes.
+    :return: ``list[str]``.
+    """
+
+    keys = []
+    group = file[root]
+    group.visit(
+        lambda key: keys.append(key) if isinstance(group[key], h5py.Group) else None
+    )
+    keys = [join(root, key) for key in keys]
+
+    if has_attrs:
+        keys = [key for key in keys if len(file[key].attrs) > 0]
+
+    return keys
+
+
 def getdatasets(file, root="/", max_depth=None, fold=None):
     r"""
-    Iterator to transverse all datasets in HDF5 file.
+    Iterator to transverse all datasets in a HDF5 file.
     One can choose to fold (not transverse deeper than):
 
     -   Groups deeper than a certain ``max_depth``.
@@ -154,7 +177,9 @@ def getpaths(data, root="/", max_depth=None, fold=None):
         specifically requested to be folded.
     """
 
-    warnings.warn("getpaths() is deprecated, use getdatasets().", warnings.DeprecationWarning)
+    warnings.warn(
+        "getpaths() is deprecated, use getdatasets().", warnings.DeprecationWarning
+    )
     return getdatasets(data, root, max_depth, fold)
 
 
@@ -301,18 +326,9 @@ def _getpaths_fold_maxdepth(file, root, fold, max_depth):
     yield from iterator(file[root], root, fold, max_depth)
 
 
-def filter_datasets(data, paths):
+def filter_datasets(file, paths):
     r"""
     From a list of paths, filter those paths that do not point to datasets.
-
-    This function can, for example, be used in conjunction with :py:func:`getdatasets`:
-
-    .. code-block:: python
-
-        with h5py.File("...", "r") as file:
-
-            datasets = GooseHDF5.filter_datasets(file,
-                GooseHDF5.getdatasets(file, max_depth=2, fold="/data"))
 
     :param h5py.File file: A HDF5-archive.
     :param list paths: List of HDF5-paths.
@@ -519,12 +535,6 @@ def _equal_value(a, b):
 
 def _equal(a, b):
 
-    if isinstance(a, h5py.Group) and isinstance(b, h5py.Group):
-        return True
-
-    if not isinstance(a, h5py.Dataset) or not isinstance(b, h5py.Dataset):
-        raise OSError("Not a Dataset")
-
     for key in a.attrs:
         if key not in b.attrs:
             return False
@@ -534,6 +544,12 @@ def _equal(a, b):
     for key in b.attrs:
         if key not in a.attrs:
             return False
+
+    if isinstance(a, h5py.Group) and isinstance(b, h5py.Group):
+        return True
+
+    if not isinstance(a, h5py.Dataset) or not isinstance(b, h5py.Dataset):
+        raise OSError("Not a Dataset")
 
     return _equal_value(a, b)
 

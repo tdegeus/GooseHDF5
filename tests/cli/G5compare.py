@@ -68,11 +68,31 @@ with h5py.File("a.hdf5", "w") as source:
         other["/f/not_equal"] = f
         other["/f/not_equal"].attrs["key"] = np.random.random(25)
 
+        # meta (not present)
+
+        meta = source.create_group("/meta")
+        meta.attrs["version"] = 0
+
+        # meta (present)
+
+        meta = source.create_group("/present")
+        meta.attrs["version"] = 0
+
+        meta = other.create_group("/present")
+        meta.attrs["version"] = 1
+
 
 output = sorted(run("G5compare a.hdf5 b.hdf5 -r /d/equal /e/equal"))
 
 expected_output = sorted(
-    [" !=  /a/not_equal", " !=  /b/not_equal", " !=  /c/not_equal", " !=  /f/not_equal"]
+    [
+        " !=  /a/not_equal",
+        " !=  /b/not_equal",
+        " !=  /c/not_equal",
+        " !=  /f/not_equal",
+        " !=  /present",
+        " ->  /meta",
+    ]
 )
 
 os.remove("a.hdf5")
