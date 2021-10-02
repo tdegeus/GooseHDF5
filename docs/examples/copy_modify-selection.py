@@ -15,5 +15,5 @@ with h5py.File("foo.h5", "r") as data:
     paths.remove("/d/e/f")
 
     with h5py.File("bar.h5", "w") as ret:
-        g5.copydatasets(data, ret, paths)
+        g5.copy(data, ret, paths)
         ret["/d/e/f"] = data["/d/e/f"][...] * 2
