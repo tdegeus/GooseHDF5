@@ -55,7 +55,7 @@ import warnings
 import h5py
 import numpy as np
 
-from .. import getpaths
+from .. import getdatasets
 from .. import version
 
 warnings.filterwarnings("ignore")
@@ -95,13 +95,13 @@ def main():
             if len(args.dataset) == 0:
                 print_header = True
                 datasets = list(
-                    getpaths(
+                    getdatasets(
                         source, root=args.root, max_depth=args.max_depth, fold=args.fold
                     )
                 )
             elif args.regex:
                 print_header = True
-                paths = getpaths(
+                paths = getdatasets(
                     source, root=args.root, max_depth=args.max_depth, fold=args.fold
                 )
                 datasets = []

@@ -46,54 +46,64 @@ def join(*args, root=False):
     return posixpath.join(*lst)
 
 
-def getdatasets(data, root="/"):
+def getdatasets(file, root="/", max_depth=None, fold=None):
     r"""
     Iterator to transverse all datasets in HDF5 file.
+    One can choose to fold (not transverse deeper than):
 
-    :param h5py.File data: A HDF5-archive.
+    -   Groups deeper than a certain ``max_depth``.
+    -   A (list of) specific group(s).
+
+    :param h5py.File file: A HDF5-archive.
     :param str root: Start a certain point along the path-tree.
+    :param int max_depth: Set a maximum depth beyond which groups are folded.
+    :param list fold: Specify groups that are folded.
     :return: Iterator.
 
     :example:
 
+        Consider this file:
+
+        .. code-block:: bash
+
+            /path/to/first/a
+            /path/to/first/b
+            /data/c
+            /data/d
+            /e
+
+        Calling:
+
         .. code-block:: python
 
-            with h5py.File('...', 'r') as data:
+            with h5py.File("...", "r") as file:
 
-                # loop over all datasets
-                for path in GooseHDF5.getdatasets(data):
+                for path in GooseHDF5.getpaths(file, max_depth=2, fold="/data"):
                     print(path)
 
-                # get a set of all datasets
-                paths = set(GooseHDF5.getdatasets(data))
+        Will print:
 
-                # get a list of all datasets
-                paths = list(GooseHDF5.getdatasets(data))
+        .. code-block:: bash
 
-        Read more in `this answer <https://stackoverflow.com/a/50720736/2646505>`_.
+            /path/to/...
+            /data/...
+            /e
+
+        The ``...`` indicates that it concerns a folded group, not a dataset.
+        Here, the first group was folded because of the maximum depth,
+        the second because it was specifically requested to be folded.
     """
 
-    # ---------------------------------------------
+    if max_depth and fold:
+        return _getpaths_fold_maxdepth(file, root, fold, max_depth)
 
-    def iterator(g, prefix):
+    if max_depth:
+        return _getpaths_maxdepth(file, root, max_depth)
 
-        for key in g.keys():
+    if fold:
+        return _getpaths_fold(file, root, fold)
 
-            item = g[key]
-            path = join(prefix, key)
-
-            if isinstance(item, h5py.Dataset):
-                yield path
-
-            elif isinstance(item, h5py.Group):
-                yield from iterator(item, path)
-
-    # ---------------------------------------------
-
-    if isinstance(data[root], h5py.Dataset):
-        yield root
-
-    yield from iterator(data[root], root)
+    return _getpaths(file, root)
 
 
 def getpaths(data, root="/", max_depth=None, fold=None):
@@ -144,19 +154,11 @@ def getpaths(data, root="/", max_depth=None, fold=None):
         specifically requested to be folded.
     """
 
-    if max_depth and fold:
-        return _getpaths_fold_maxdepth(data, root, fold, max_depth)
-
-    if max_depth:
-        return _getpaths_maxdepth(data, root, max_depth)
-
-    if fold:
-        return _getpaths_fold(data, root, fold)
-
-    return _getpaths(data, root)
+    warnings.warn("getpaths() is deprecated, use getdatasets().", warnings.DeprecationWarning)
+    return getdatasets(data, root, max_depth, fold)
 
 
-def _getpaths(data, root):
+def _getpaths(file, root):
     r"""
     Specialization for :py:func:`getpaths`.
     """
@@ -178,13 +180,13 @@ def _getpaths(data, root):
 
     # ---------------------------------------------
 
-    if isinstance(data[root], h5py.Dataset):
+    if isinstance(file[root], h5py.Dataset):
         yield root
 
-    yield from iterator(data[root], root)
+    yield from iterator(file[root], root)
 
 
-def _getpaths_maxdepth(data, root, max_depth):
+def _getpaths_maxdepth(file, root, max_depth):
     r"""
     Specialization for :py:func:`getpaths` such that:
 
@@ -214,13 +216,13 @@ def _getpaths_maxdepth(data, root, max_depth):
     if isinstance(max_depth, str):
         max_depth = int(max_depth)
 
-    if isinstance(data[root], h5py.Dataset):
+    if isinstance(file[root], h5py.Dataset):
         yield root
 
-    yield from iterator(data[root], root, max_depth)
+    yield from iterator(file[root], root, max_depth)
 
 
-def _getpaths_fold(data, root, fold):
+def _getpaths_fold(file, root, fold):
     r"""
     Specialization for :py:func:`getpaths` such that:
 
@@ -250,13 +252,13 @@ def _getpaths_fold(data, root, fold):
     if isinstance(fold, str):
         fold = [fold]
 
-    if isinstance(data[root], h5py.Dataset):
+    if isinstance(file[root], h5py.Dataset):
         yield root
 
-    yield from iterator(data[root], root, fold)
+    yield from iterator(file[root], root, fold)
 
 
-def _getpaths_fold_maxdepth(data, root, fold, max_depth):
+def _getpaths_fold_maxdepth(file, root, fold, max_depth):
     r"""
     Specialization for :py:func:`getpaths` such that:
 
@@ -293,26 +295,26 @@ def _getpaths_fold_maxdepth(data, root, fold, max_depth):
     if isinstance(fold, str):
         fold = [fold]
 
-    if isinstance(data[root], h5py.Dataset):
+    if isinstance(file[root], h5py.Dataset):
         yield root
 
-    yield from iterator(data[root], root, fold, max_depth)
+    yield from iterator(file[root], root, fold, max_depth)
 
 
 def filter_datasets(data, paths):
     r"""
     From a list of paths, filter those paths that do not point to datasets.
 
-    This function can, for example, be used in conjunction with :py:func:`getpaths`:
+    This function can, for example, be used in conjunction with :py:func:`getdatasets`:
 
     .. code-block:: python
 
-        with h5py.File('...', 'r') as data:
+        with h5py.File("...", "r") as file:
 
-            datasets = GooseHDF5.filter_datasets(data,
-                GooseHDF5.getpaths(data, max_depth=2, fold='/data'))
+            datasets = GooseHDF5.filter_datasets(file,
+                GooseHDF5.getdatasets(file, max_depth=2, fold="/data"))
 
-    :param h5py.File data: A HDF5-archive.
+    :param h5py.File file: A HDF5-archive.
     :param list paths: List of HDF5-paths.
     :return: Filtered ``paths``.
     """
@@ -321,15 +323,15 @@ def filter_datasets(data, paths):
 
     paths = list(paths)
     paths = [path for path in paths if not re.match(r"(.*)(/\.\.\.)", path)]
-    paths = [path for path in paths if isinstance(data[path], h5py.Dataset)]
+    paths = [path for path in paths if isinstance(file[path], h5py.Dataset)]
     return paths
 
 
-def verify(data, datasets, error=False):
+def verify(file, datasets, error=False):
     r"""
     Try reading each datasets.
 
-    :param h5py.File data: A HDF5-archive.
+    :param h5py.File file: A HDF5-archive.
     :param list datasets: List of HDF5-paths tp datasets.
 
     :param bool error:
@@ -344,7 +346,7 @@ def verify(data, datasets, error=False):
     for path in datasets:
 
         try:
-            data[path][...]
+            file[path][...]
         except:  # noqa: E722
             if error:
                 raise OSError(f'Error reading "{path:s}"')
@@ -356,25 +358,25 @@ def verify(data, datasets, error=False):
     return ret
 
 
-def exists(data, path):
+def exists(file, path):
     r"""
     Check if a path exists in the HDF5-archive.
 
-    :param h5py.File data: A HDF5-archive.
+    :param h5py.File file: A HDF5-archive.
     :param str path: HDF5-path.
     """
 
-    if path in data:
+    if path in file:
         return True
 
     return False
 
 
-def exists_any(data, paths):
+def exists_any(file, paths):
     r"""
     Check if any of the input paths exists in the HDF5-archive.
 
-    :param h5py.File data: A HDF5-archive.
+    :param h5py.File file: A HDF5-archive.
     :param list path: List of HDF5-paths.
     """
 
@@ -382,19 +384,19 @@ def exists_any(data, paths):
         paths = [paths]
 
     for path in paths:
-        if exists(data, path):
+        if exists(file, path):
             return True
 
     return False
 
 
-def exists_all(data, paths):
+def exists_all(file, paths):
     r"""
     Check if all of the input paths exists in the HDF5-archive.
 
     :arguments:
 
-    :param h5py.File data: A HDF5-archive.
+    :param h5py.File file: A HDF5-archive.
     :param list path: List of HDF5-paths.
     """
 
@@ -402,7 +404,7 @@ def exists_all(data, paths):
         paths = [paths]
 
     for path in paths:
-        if not exists(data, path):
+        if not exists(file, path):
             return False
 
     return True

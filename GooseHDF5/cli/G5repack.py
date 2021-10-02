@@ -34,7 +34,7 @@ import warnings
 import h5py
 
 from .. import copy_dataset
-from .. import getpaths
+from .. import getdatasets
 from .. import version
 
 warnings.filterwarnings("ignore")
@@ -71,7 +71,7 @@ def main():
             with h5py.File(filename, "r") as source:
                 with h5py.File(tempname, "w") as tmp:
                     copy_dataset(
-                        source, tmp, getpaths(source), args.compress, args.float
+                        source, tmp, getdatasets(source), args.compress, args.float
                     )
 
             os.replace(tempname, filename)
