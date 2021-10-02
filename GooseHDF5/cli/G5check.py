@@ -29,7 +29,7 @@ import warnings
 
 import h5py
 
-from .. import getdatasets
+from .. import getdatapaths
 from .. import verify
 from .. import version
 
@@ -44,9 +44,7 @@ def check_isfile(fname):
 def read(filename, check):
 
     with h5py.File(filename, "r") as source:
-
-        paths = getdatasets(source)
-
+        paths = getdatapaths(source)
         if check:
             verify(source, paths, error=True)
 

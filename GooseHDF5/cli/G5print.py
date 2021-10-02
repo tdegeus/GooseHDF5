@@ -56,6 +56,7 @@ import h5py
 import numpy as np
 
 from .. import getdatasets
+from .. import getgroups
 from .. import version
 
 warnings.filterwarnings("ignore")
@@ -99,14 +100,20 @@ def main():
                         source, root=args.root, max_depth=args.max_depth, fold=args.fold
                     )
                 )
+                datasets += list(getgroups(source, has_attrs=True))
+                datasets = sorted(datasets)
             elif args.regex:
                 print_header = True
-                paths = getdatasets(
-                    source, root=args.root, max_depth=args.max_depth, fold=args.fold
+                paths = list(
+                    getdatasets(
+                        source, root=args.root, max_depth=args.max_depth, fold=args.fold
+                    )
                 )
+                paths += list(getgroups(source, has_attrs=True))
                 datasets = []
                 for dataset in args.dataset:
                     datasets += [path for path in paths if re.match(dataset, path)]
+                datasets = sorted(datasets)
             else:
                 datasets = args.dataset
                 print_header = len(datasets) > 1
@@ -121,23 +128,26 @@ def main():
                 data = source[dataset]
 
                 if args.info:
-                    print(
-                        "path = {:s}, size = {:s}, shape = {:s}, dtype = {:s}".format(
-                            dataset,
-                            str(data.size),
-                            str(data.shape),
-                            str(data.dtype),
+                    if isinstance(data, h5py.Dataset):
+                        print(
+                            "path = {:s}, size = {:s}, shape = {:s}, dtype = {:s}".format(
+                                dataset,
+                                str(data.size),
+                                str(data.shape),
+                                str(data.dtype),
+                            )
                         )
-                    )
+                    else:
+                        print(f"path = {dataset}")
                 elif print_header:
                     print(dataset)
 
-                if args.attrs:
-                    for key in data.attrs:
-                        print(key + " : " + str(data.attrs[key]))
+                for key in data.attrs:
+                    print(key + " : " + str(data.attrs[key]))
 
-                if not args.no_data:
-                    print(data[...])
+                if isinstance(data, h5py.Dataset):
+                    if not args.no_data:
+                        print(data[...])
 
                 if len(datasets) > 1 and i < len(datasets) - 1:
                     print("")

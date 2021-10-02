@@ -1,3 +1,4 @@
+import posixpath
 import warnings
 
 import h5py
@@ -16,9 +17,6 @@ def abspath(path):
     :param str path: A HDF5-path.
     :return: The absolute path.
     """
-
-    import posixpath
-
     return posixpath.normpath(posixpath.join("/", path))
 
 
@@ -29,8 +27,6 @@ def join(*args, root=False):
     :param list args: Piece of a path.
     :return: The concatenated path.
     """
-
-    import posixpath
 
     lst = []
 
@@ -46,9 +42,22 @@ def join(*args, root=False):
     return posixpath.join(*lst)
 
 
+def getdatapaths(file, root: str = "/"):
+    """
+    Get paths to all datasets and groups that contain attributes.
+
+    :param file: A HDF5-archive.
+    :param root: Start a certain point along the path-tree.
+    :return: ``list[str]``.
+    """
+    return list(getdatasets(file, root=root)) + list(
+        getgroups(file, root=root, has_attrs=True)
+    )
+
+
 def getgroups(file: h5py.File, root: str = "/", has_attrs=False):
     """
-    Iterator to transverse all groups in a HDF5 file.
+    Iterator to transverse all groups in a HDF5-archive.
 
     :param file: A HDF5-archive.
     :param root: Start a certain point along the path-tree.
@@ -71,7 +80,7 @@ def getgroups(file: h5py.File, root: str = "/", has_attrs=False):
 
 def getdatasets(file, root="/", max_depth=None, fold=None):
     r"""
-    Iterator to transverse all datasets in a HDF5 file.
+    Iterator to transverse all datasets in a HDF5-archive.
     One can choose to fold (not transverse deeper than):
 
     -   Groups deeper than a certain ``max_depth``.
@@ -131,7 +140,7 @@ def getdatasets(file, root="/", max_depth=None, fold=None):
 
 def getpaths(data, root="/", max_depth=None, fold=None):
     r"""
-    Iterator to transverse all datasets in HDF5 file.
+    Iterator to transverse all datasets in HDF5-archive.
     One can choose to fold (not transverse deeper than):
 
     -   Groups deeper than a certain ``max_depth``.
@@ -426,53 +435,146 @@ def exists_all(file, paths):
     return True
 
 
-def copydatasets(source, dest, source_datasets, dest_datasets=None, root=None):
-    r"""
-    Copy all datasets from one HDF5-archive ``source`` to another HDF5-archive ``dest``.
-    The datasets can be renamed by specifying a list of ``dest_datasets``
-    (whose entries should correspond to the ``source_datasets``).
-
-    In addition, a ``root`` (path prefix) for the destination datasets name can be specified.
-
-    :param h5py.File source: The source HDF5-archive.
-    :param h5py.File dest: The destination HDF5-archive.
-    :param list source_datasets: List of dataset-paths in ``source``.
-    :param list dest_datasets: List of dataset-paths in ``dest``, defaults to ``source_datasets``.
-    :param str root: Path prefix for all ``dest_datasets``.
+def _create_groups(file, paths):
+    """
+    Create all groups higher than ``paths``.
+    For ``path = ["/a/b/c"]`` this function will create groups ``["/a", "/a/b"]``.
     """
 
-    import posixpath
-
-    source_datasets = [abspath(path) for path in source_datasets]
-
-    if not dest_datasets:
-        dest_datasets = [path for path in source_datasets]
-
-    if root:
-        dest_datasets = [join(root, path, root=True) for path in dest_datasets]
-
-    for dest_path in dest_datasets:
-        if exists(dest, dest_path):
-            raise OSError(f'Dataset "{dest_path:s}" already exists')
-
-    # extract groups and sort based on depth
-    groups = list({posixpath.split(path)[0] for path in dest_datasets})
+    groups = [posixpath.split(path)[0] for path in paths]
     groups = [group for group in groups if group != "/"]
     groups = sorted(groups, key=lambda group: (group.count("/"), group))
 
-    # create groups
     for group in groups:
-        if not exists(dest, group):
-            dest.create_group(group)
+        if not exists(file, group):
+            file.create_group(group)
 
-    # copy datasets
-    for source_path, dest_path in zip(source_datasets, dest_datasets):
+
+def _copy(source, dest, source_paths, dest_paths):
+    """
+    Copy paths recursively.
+    """
+
+    if len(source_paths) == 0:
+        return 0
+
+    _create_groups(dest, dest_paths)
+
+    for source_path, dest_path in zip(source_paths, dest_paths):
+        # skip paths that were already recursively copied
+        # (main function checks existence before, so this can be the only reason)
+        if dest_path in dest:
+            continue
         group = posixpath.split(dest_path)[0]
         source.copy(source_path, dest[group], posixpath.split(dest_path)[1])
 
 
+def _copy_attrs(source, dest, source_paths, dest_paths):
+
+    if len(source_paths) == 0:
+        return 0
+
+    _create_groups(dest, dest_paths)
+
+    for source_path, dest_path in zip(source_paths, dest_paths):
+
+        source_group = source[source_path]
+
+        if dest_path not in dest:
+            dest_group = dest.create_group(dest_path)
+        else:
+            dest_group = dest[dest_path]
+
+        for key in source_group.attrs:
+            dest_group.attrs[key] = source_group.attrs[key]
+
+
+def copy(
+    source: h5py.File,
+    dest: h5py.File,
+    source_datasets: list[str],
+    dest_datasets: list[str] = None,
+    root: str = None,
+    recursive=True,
+):
+    """
+    Copy groups/datasets from one HDF5-archive ``source`` to another HDF5-archive ``dest``.
+    The datasets can be renamed by specifying a list of ``dest_datasets``
+    (whose entries should correspond to the ``source_datasets``).
+    In addition, a ``root`` (path prefix) for the destination datasets name can be specified.
+
+    :param source: The source HDF5-archive.
+    :param dest: The destination HDF5-archive.
+    :param source_datasets: List of dataset-paths in ``source``.
+    :param dest_datasets: List of dataset-paths in ``dest``, defaults to ``source_datasets``.
+    :param root: Path prefix for all ``dest_datasets``.
+    :param recursive: If the source is a group, copy all objects within that group recursively.
+    """
+
+    source_datasets = np.array([abspath(path) for path in source_datasets])
+
+    if not dest_datasets:
+        dest_datasets = np.array([path for path in source_datasets])
+
+    if root:
+        dest_datasets = np.array(
+            [join(root, path, root=True) for path in dest_datasets]
+        )
+
+    for path in dest_datasets:
+        if exists(dest, path):
+            raise OSError(f'Dataset "{path}" already exists')
+
+    isgroup = np.array(
+        [isinstance(source[path], h5py.Group) for path in source_datasets]
+    )
+
+    if recursive:
+        _copy(source, dest, source_datasets[isgroup], dest_datasets[isgroup])
+
+    _copy(
+        source,
+        dest,
+        source_datasets[np.logical_not(isgroup)],
+        dest_datasets[np.logical_not(isgroup)],
+    )
+
+    if not recursive:
+        _copy_attrs(source, dest, source_datasets[isgroup], dest_datasets[isgroup])
+
+
+def copydatasets(
+    source: h5py.File,
+    dest: h5py.File,
+    source_datasets: list[str],
+    dest_datasets: list[str] = None,
+    root: str = None,
+):
+    """
+    Copy datasets from one HDF5-archive ``source`` to another HDF5-archive ``dest``.
+    The datasets can be renamed by specifying a list of ``dest_datasets``
+    (whose entries should correspond to the ``source_datasets``).
+    If the source is a Group object,
+    by default all objects within that group will be copied recursively.
+
+    In addition, a ``root`` (path prefix) for the destination datasets name can be specified.
+
+    :param source: The source HDF5-archive.
+    :param dest: The destination HDF5-archive.
+    :param source_datasets: List of dataset-paths in ``source``.
+    :param dest_datasets: List of dataset-paths in ``dest``, defaults to ``source_datasets``.
+    :param root: Path prefix for all ``dest_datasets``.
+    """
+
+    warnings.warn(
+        "copydatasets() is deprecated, use copy().", warnings.DeprecationWarning
+    )
+
+    return copy(source, dest, source_datasets, dest_datasets, root)
+
+
 def isnumeric(a):
-    r"""
+    """
     Returns ``True`` is an array contains numeric values.
 
     :param array a: An array.

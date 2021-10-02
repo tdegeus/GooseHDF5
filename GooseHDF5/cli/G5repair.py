@@ -33,8 +33,8 @@ import warnings
 import click
 import h5py
 
-from .. import copydatasets
-from .. import getdatasets
+from .. import copy
+from .. import getdatapaths
 from .. import verify
 from .. import version
 
@@ -69,10 +69,10 @@ def main():
 
         with h5py.File(args.source, "r") as source:
 
-            paths = verify(source, getdatasets(source))
+            paths = verify(source, getdatapaths(source))
 
             with h5py.File(args.destination, "w") as dest:
-                copydatasets(source, dest, paths)
+                copy(source, dest, paths)
 
     except Exception as e:
 
