@@ -1,3 +1,5 @@
+import functools
+import operator
 import posixpath
 import warnings
 
@@ -8,6 +10,59 @@ from ._version import version  # noqa: F401
 from ._version import version_tuple  # noqa: F401
 
 warnings.filterwarnings("ignore")
+
+
+def _dict_iterategroups(data: dict, root: str = "/"):
+    """
+    Get groups from a (nested) dictionary.
+
+    :param data: A nested dictionary.
+    :param root: The path the the (current) root.
+    :return: iterator
+    """
+
+    for key in data.keys():
+
+        item = data[key]
+        path = join(root, key)
+
+        if not isinstance(item, dict):
+            yield path
+        else:
+            yield from _dict_iterategroups(item, path)
+
+
+def _dict_get(data: dict, path: str):
+    r"""
+    Get an item from a nested dictionary.
+
+    :param data: A nested dictionary.
+    :param path: E.g.``"/path/to/data"``.
+    :return: The item.
+    """
+
+    key = list(filter(None, path.split("/")))
+
+    if len(key) > 0:
+        try:
+            return functools.reduce(operator.getitem, key, data)
+        except KeyError:
+            raise OSError(f'"{path:s}" not found')
+
+    return data
+
+
+def dump(file: h5py.File, data: dict, root: str = "/"):
+    """
+    Dump (nested) dictionary to file.
+    """
+
+    assert isinstance(data, dict)
+
+    paths = list(_dict_iterategroups(data))
+
+    for path in paths:
+        file[join(root, path)] = _dict_get(data, path)
 
 
 def abspath(path):
