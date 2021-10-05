@@ -11,6 +11,9 @@
 
 :options:
 
+    -D, --datasets
+        Only datasets (ignore that groups can have attributes).
+
     -f, --fold=ARG
         Fold paths. Can be repeated.
 
@@ -164,6 +167,7 @@ def main():
                 print(__doc__)
 
         parser = Parser()
+        parser.add_argument("-D", "--datasets", action="store_true")
         parser.add_argument("-f", "--fold", required=False, action="append")
         parser.add_argument("-d", "--max-depth", required=False, type=int)
         parser.add_argument("-r", "--root", required=False, default="/")
@@ -184,7 +188,8 @@ def main():
                     source, root=args.root, max_depth=args.max_depth, fold=args.fold
                 )
             )
-            paths += list(getgroups(source, root=args.root, has_attrs=True))
+            if not args.datasets:
+                paths += list(getgroups(source, root=args.root, has_attrs=True))
             paths = sorted(paths)
 
             if args.info:
