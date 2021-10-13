@@ -2,6 +2,9 @@ import functools
 import operator
 import posixpath
 import warnings
+from collections import defaultdict
+from functools import singledispatch
+from typing import Union
 
 import h5py
 import numpy as np
@@ -690,13 +693,16 @@ def _equal_value(a, b):
     return list(a[...]) == list(b[...])
 
 
-def _equal(a, b):
+def _equal(a, b, matching_dtype):
 
     for key in a.attrs:
         if key not in b.attrs:
             return False
         if not _equal_value(a.attrs[key], b.attrs[key]):
             return False
+        if matching_dtype:
+            if a.attrs[key].dtype != b.attrs[key].dtype:
+                return False
 
     for key in b.attrs:
         if key not in a.attrs:
@@ -708,10 +714,16 @@ def _equal(a, b):
     if not isinstance(a, h5py.Dataset) or not isinstance(b, h5py.Dataset):
         raise OSError("Not a Dataset")
 
+    if matching_dtype:
+        if a.dtype != b.dtype:
+            return False
+
     return _equal_value(a, b)
 
 
-def equal(source, dest, source_dataset, dest_dataset=None):
+def equal(
+    source, dest, source_dataset, dest_dataset=None, matching_dtype: bool = False
+):
     r"""
     Check that a dataset is equal in both files.
 
@@ -730,10 +742,12 @@ def equal(source, dest, source_dataset, dest_dataset=None):
     if dest_dataset not in dest:
         raise OSError(f'"{dest_dataset:s} not in {dest.filename:s}')
 
-    return _equal(source[source_dataset], dest[dest_dataset])
+    return _equal(source[source_dataset], dest[dest_dataset], matching_dtype)
 
 
-def allequal(source, dest, source_datasets, dest_datasets=None):
+def allequal(
+    source, dest, source_datasets, dest_datasets=None, matching_dtype: bool = False
+):
     r"""
     Check that all listed datasets are equal in both files.
 
@@ -747,10 +761,91 @@ def allequal(source, dest, source_datasets, dest_datasets=None):
         dest_datasets = [path for path in source_datasets]
 
     for source_dataset, dest_dataset in zip(source_datasets, dest_datasets):
-        if not equal(source, dest, source_dataset, dest_dataset):
+        if not equal(source, dest, source_dataset, dest_dataset, matching_dtype):
             return False
 
     return True
+
+
+@singledispatch
+def compare(
+    a: Union[str, h5py.File],
+    b: Union[str, h5py.File],
+    paths_a: list[str] = None,
+    paths_b: list[str] = None,
+    matching_dtype: bool = False,
+):
+    """
+    Compare two files.
+    Return dictionary with differences::
+
+        {
+            "->" : ["/path/in/b/but/not/in/a", ...],
+            "<-" : ["/path/in/a/but/not/in/b", ...],
+            "!=" : ["/path/in/both/but/different/data", ...],
+            "==" : ["/data/matching", ...]
+        }
+
+    :param a: HDF5-archive (as opened ``h5py.File`` or with the ``filepath``).
+    :param b: HDF5-archive (as opened ``h5py.File`` or with the ``filepath``).
+    :param paths_a: Paths from ``a`` to consider. Default: read from :py:func:`getdatapaths`.
+    :param paths_b: Paths from ``b`` to consider. Default: read from :py:func:`getdatapaths`.
+    :param matching_dtype: Check that not only the data but also the type matches.
+    """
+    raise NotImplementedError("Overload not found.")
+
+
+@compare.register(h5py.File)
+def _(
+    a: h5py.File,
+    b: h5py.File,
+    paths_a: list[str] = None,
+    paths_b: list[str] = None,
+    matching_dtype: bool = False,
+):
+
+    ret = defaultdict(list)
+
+    if paths_b is None and paths_a is not None:
+        paths_b = paths_a
+
+    if paths_a is None:
+        paths_a = getdatapaths(a)
+
+    if paths_b is None:
+        paths_b = getdatapaths(b)
+
+    not_in_b = [str(i) for i in np.setdiff1d(paths_a, paths_b)]
+    not_in_a = [str(i) for i in np.setdiff1d(paths_b, paths_a)]
+    inboth = [str(i) for i in np.intersect1d(paths_a, paths_b)]
+
+    for path in not_in_a:
+        ret["<-"].append(path)
+
+    for path in not_in_b:
+        ret["->"].append(path)
+
+    for path in inboth:
+        if not equal(a, b, path, matching_dtype=matching_dtype):
+            ret["!="].append(path)
+        else:
+            ret["=="].append(path)
+
+    return ret
+
+
+@compare.register(str)
+def _(
+    a: str,
+    b: str,
+    paths_a: list[str] = None,
+    paths_b: list[str] = None,
+    matching_dtype: bool = False,
+):
+
+    with h5py.File(a, "r") as a_file:
+        with h5py.File(b, "r") as b_file:
+            return compare(a_file, b_file, paths_a, paths_a, matching_dtype)
 
 
 def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
