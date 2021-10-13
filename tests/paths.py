@@ -100,30 +100,30 @@ class Test_itereator(unittest.TestCase):
                 a = np.random.random(25)
 
                 source["/a/equal"] = a
-                source["/a/not_equal"] = a
+                source["/a/ne_data"] = a
 
                 other["/a/equal"] = a
-                other["/a/not_equal"] = np.random.random(25)
+                other["/a/ne_data"] = np.random.random(25)
 
                 # single number
 
                 b = float(np.random.random(1))
 
                 source["/b/equal"] = b
-                source["/b/not_equal"] = b
+                source["/b/ne_data"] = b
 
                 other["/b/equal"] = b
-                other["/b/not_equal"] = float(np.random.random(1))
+                other["/b/ne_data"] = float(np.random.random(1))
 
                 # string
 
                 c = "foobar"
 
                 source["/c/equal"] = c
-                source["/c/not_equal"] = c
+                source["/c/ne_data"] = c
 
                 other["/c/equal"] = c
-                other["/c/not_equal"] = "foobar2"
+                other["/c/ne_data"] = "foobar2"
 
                 # attribute
 
@@ -131,23 +131,23 @@ class Test_itereator(unittest.TestCase):
 
                 source["/d/equal"] = d
                 source["/d/equal"].attrs["key"] = d
-                source["/d/not_equal"] = d
-                source["/d/not_equal"].attrs["key"] = d
+                source["/d/ne_attr"] = d
+                source["/d/ne_attr"].attrs["key"] = d
 
                 other["/d/equal"] = d
                 other["/d/equal"].attrs["key"] = d
-                other["/d/not_equal"] = d
-                other["/d/not_equal"].attrs["key"] = np.random.random(25)
+                other["/d/ne_attr"] = d
+                other["/d/ne_attr"].attrs["key"] = np.random.random(25)
 
                 # dtyoe
 
                 e = (100.0 * np.random.random(25)).astype(int)
 
                 source["/e/equal"] = e
-                source["/e/not_equal"] = e
+                source["/e/ne_dtype"] = e
 
                 other["/e/equal"] = e
-                other["/e/not_equal"] = e.astype(float)
+                other["/e/ne_dtype"] = e.astype(float)
 
                 # dtyoe attribute
 
@@ -155,13 +155,13 @@ class Test_itereator(unittest.TestCase):
 
                 source["/f/equal"] = f
                 source["/f/equal"].attrs["key"] = f
-                source["/f/not_equal"] = f
-                source["/f/not_equal"].attrs["key"] = f
+                source["/f/ne_dtype_attr"] = f
+                source["/f/ne_dtype_attr"].attrs["key"] = f
 
                 other["/f/equal"] = f
                 other["/f/equal"].attrs["key"] = f
-                other["/f/not_equal"] = f
-                other["/f/not_equal"].attrs["key"] = f.astype(float)
+                other["/f/ne_dtype_attr"] = f
+                other["/f/ne_dtype_attr"].attrs["key"] = f.astype(float)
 
                 # attribute (not present)
 
@@ -170,10 +170,10 @@ class Test_itereator(unittest.TestCase):
 
                 # attribute (not equal)
 
-                meta = source.create_group("/meta_not_equal")
+                meta = source.create_group("/meta_ne_attr")
                 meta.attrs["version"] = 0
 
-                meta = other.create_group("/meta_not_equal")
+                meta = other.create_group("/meta_ne_attr")
                 meta.attrs["version"] = 1
 
                 # attribute (equal)
@@ -186,17 +186,18 @@ class Test_itereator(unittest.TestCase):
 
                 # check
 
-                ret = g5.compare(source, other)
+                check_all = g5.compare(source, other)
+                check_datasets = g5.compare(source, other, attrs=False)
 
-        expected_output = {
+        expected_all = {
             "!=": [
-                "/a/not_equal",
-                "/b/not_equal",
-                "/c/not_equal",
-                "/d/not_equal",
-                "/e/not_equal",
-                "/f/not_equal",
-                "/meta_not_equal",
+                "/a/ne_data",
+                "/b/ne_data",
+                "/c/ne_data",
+                "/d/ne_attr",
+                "/e/ne_dtype",
+                "/f/ne_dtype_attr",
+                "/meta_ne_attr",
             ],
             "->": ["/meta"],
             "==": [
@@ -210,13 +211,39 @@ class Test_itereator(unittest.TestCase):
             ],
         }
 
-        for key in expected_output:
-            expected_output[key] = sorted(expected_output[key])
+        expected_datasets = {
+            "!=": [
+                "/a/ne_data",
+                "/b/ne_data",
+                "/c/ne_data",
+                "/e/ne_dtype",
+            ],
+            "==": [
+                "/a/equal",
+                "/b/equal",
+                "/c/equal",
+                "/d/equal",
+                "/d/ne_attr",
+                "/e/equal",
+                "/f/equal",
+                "/f/ne_dtype_attr",
+            ],
+        }
 
-        for key in ret:
-            ret[key] = sorted(ret[key])
+        for key in expected_all:
+            expected_all[key] = sorted(expected_all[key])
 
-        self.assertEqual(expected_output, ret)
+        for key in expected_datasets:
+            expected_datasets[key] = sorted(expected_datasets[key])
+
+        for key in check_all:
+            check_all[key] = sorted(check_all[key])
+
+        for key in check_datasets:
+            check_datasets[key] = sorted(check_datasets[key])
+
+        self.assertEqual(expected_all, check_all)
+        self.assertEqual(expected_datasets, check_datasets)
 
         shutil.rmtree(dirname)
 
