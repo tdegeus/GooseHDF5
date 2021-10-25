@@ -553,7 +553,7 @@ def copy(
     source_datasets: list[str],
     dest_datasets: list[str] = None,
     root: str = None,
-    recursive=True,
+    recursive: bool = True,
 ):
     """
     Copy groups/datasets from one HDF5-archive ``source`` to another HDF5-archive ``dest``.
@@ -572,7 +572,9 @@ def copy(
     source_datasets = np.array([abspath(path) for path in source_datasets])
 
     if not dest_datasets:
-        dest_datasets = np.array([path for path in source_datasets])
+        dest_datasets = [path for path in source_datasets]
+
+    dest_datasets = np.array(dest_datasets)
 
     if root:
         dest_datasets = np.array(
