@@ -38,11 +38,130 @@ import warnings
 
 import h5py
 
+from .. import compare
 from .. import equal
 from .. import getdatapaths
 from .. import version
 
 warnings.filterwarnings("ignore")
+
+
+def theme(theme=None):
+    r"""
+    Return dictionary of colors.
+
+    .. code-block:: python
+
+        {
+            'new' : '...',
+            'overwrite' : '...',
+            'skip' : '...',
+            'bright' : '...',
+        }
+
+    :param str theme: Select color-theme.
+
+    :rtype: dict
+    """
+
+    if theme == "dark":
+        return {
+            "->": "9;31",
+            "<-": "1;32",
+            "!=": "1;31",
+        }
+
+    return {
+        "->": "",
+        "<-": "",
+        "!=": "",
+    }
+
+
+class String:
+    r"""
+    Rich string.
+
+    .. note::
+
+        All options are attributes, that can be modified at all times.
+
+    .. note::
+
+        Available methods:
+
+        *   ``A.format()`` :  Formatted string.
+        *   ``str(A)`` : Unformatted string.
+        *   ``A.isnumeric()`` : Return if the "data" is numeric.
+        *   ``int(A)`` : Dummy integer.
+        *   ``float(A)`` : Dummy float.
+
+    :type data: str, None
+    :param data: The data.
+
+    :type width: None, int
+    :param width: Print width (formatted print only).
+
+    :type color: None, str
+    :param color: Print color, e.g. "1;32" for bold green (formatted print only).
+
+    :type align: ``'<'``, ``'>'``
+    :param align: Print alignment (formatted print only).
+
+    :type dummy: 0, int, float
+    :param dummy: Dummy numerical value.
+
+    :methods:
+
+
+    """
+
+    def __init__(self, data, width=None, align="<", color=None, dummy=0):
+
+        self.data = data
+        self.width = width
+        self.color = color
+        self.align = align
+        self.dummy = dummy
+
+    def format(self):
+        r"""
+        Return formatted string: align/width/color are applied.
+        """
+
+        if self.width and self.color:
+            fmt = "\x1b[{color:s}m{{0:{align:s}{width:d}.{width:d}s}}\x1b[0m".format(
+                **self.__dict__
+            )
+        elif self.width:
+            fmt = "{{0:{align:s}{width:d}.{width:d}s}}".format(**self.__dict__)
+        elif self.color:
+            fmt = "\x1b[{color:s}m{{0:{align:s}s}}\x1b[0m".format(**self.__dict__)
+        else:
+            fmt = "{{0:{align:s}s}}".format(**self.__dict__)
+
+        return fmt.format(str(self))
+
+    def isnumeric(self):
+        r"""
+        Return if the "data" is numeric : always zero for this class.
+        """
+        return False
+
+    def __str__(self):
+        return str(self.data)
+
+    def __int__(self):
+        return int(self.dummy)
+
+    def __float__(self):
+        return float(self.dummy)
+
+    def __repr__(self):
+        return str(self)
+
+    def __lt__(self, other):
+        return str(self) < str(other)
 
 
 def check_isfile(fname):
@@ -68,31 +187,47 @@ def check_dataset(source, dest, source_dataset, dest_dataset, check_dtype):
     return True
 
 
-def _check_plain(source, other, check_dtype):
+def _check_plain(source, other, check_dtype, color):
     r"""
     Support function for "check_plain."
     """
 
-    for path in getdatapaths(source):
-        if path not in other:
-            print(f"-> {path}")
+    comp = compare(source, other, matching_dtype=check_dtype)
 
-    for path in getdatapaths(other):
-        if path not in source:
-            print(f"<- {path}")
+    n = 0
+    for key in comp:
+        if key != "==":
+            for item in comp[key]:
+                n = max(n, len(item))
 
-    for path in getdatapaths(source):
-        if path in other:
-            check_dataset(source, other, path, path, check_dtype)
+    paths = []
+    for key in comp:
+        if key != "==":
+            for item in comp[key]:
+                paths += [(item, key)]
+
+    paths = sorted(paths, key=lambda v: v[0])
+
+    for path, key in paths:
+        if key == "<-":
+            print(" " * n + " <- " + String(path, color=color["<-"]).format())
+        elif key == "->":
+            print(String(path, color=color["->"], width=n).format() + " -> ")
+        else:
+            print(
+                String(path, color=color["!="], width=n).format()
+                + " != "
+                + String(path, color=color["!="], width=n).format()
+            )
 
 
-def check_plain(source_name, other_name, check_dtype):
+def check_plain(source_name, other_name, check_dtype, color):
     r"""
     Check all datasets (without allowing for renamed datasets).
     """
     with h5py.File(source_name, "r") as source:
         with h5py.File(other_name, "r") as other:
-            _check_plain(source, other, check_dtype)
+            _check_plain(source, other, check_dtype, color)
 
 
 def _check_renamed(source, other, renamed, check_dtype):
@@ -151,7 +286,7 @@ def main():
         check_isfile(args.other)
 
         if not args.renamed:
-            check_plain(args.source, args.other, args.dtype)
+            check_plain(args.source, args.other, args.dtype, theme("dark"))
             return 0
 
         check_renamed(args.source, args.other, args.renamed, args.dtype)
