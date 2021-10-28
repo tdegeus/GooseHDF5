@@ -785,6 +785,29 @@ def allequal(
     return True
 
 
+def _compare_paths(a: h5py.File, b: h5py.File, paths_a: list[str], paths_b: list[str], attrs: bool) -> type[list[str], list[str]]:
+    """
+    Default paths for :py:func:`compare`.
+    """
+
+    if paths_b is None and paths_a is not None:
+        paths_b = paths_a
+
+    if paths_a is None:
+        if attrs:
+            paths_a = getdatapaths(a)
+        else:
+            paths_a = list(getdatasets(a))
+
+    if paths_b is None:
+        if attrs:
+            paths_b = getdatapaths(b)
+        else:
+            paths_b = list(getdatasets(b))
+
+    return paths_a, paths_b
+
+
 @singledispatch
 def compare(
     a: Union[str, h5py.File],
@@ -825,22 +848,8 @@ def _(
     matching_dtype: bool = False,
 ):
 
-    ret = defaultdict(list)
-
-    if paths_b is None and paths_a is not None:
-        paths_b = paths_a
-
-    if paths_a is None:
-        if attrs:
-            paths_a = getdatapaths(a)
-        else:
-            paths_a = list(getdatasets(a))
-
-    if paths_b is None:
-        if attrs:
-            paths_b = getdatapaths(b)
-        else:
-            paths_b = list(getdatasets(b))
+    ret = {"<-": [], "->": [], "!=": [], "==": []}
+    paths_a, paths_b = _compare_paths(a, b, paths_a, paths_b, attrs)
 
     not_in_b = [str(i) for i in np.setdiff1d(paths_a, paths_b)]
     not_in_a = [str(i) for i in np.setdiff1d(paths_b, paths_a)]
@@ -871,9 +880,9 @@ def _(
     matching_dtype: bool = False,
 ):
 
-    with h5py.File(a, "r") as a_file:
-        with h5py.File(b, "r") as b_file:
-            return compare(a_file, b_file, paths_a, paths_a, attrs, matching_dtype)
+    with h5py.File(a, "r") as a_file, h5py.File(b, "r") as b_file:
+        return compare(a_file, b_file, paths_a, paths_a, attrs, matching_dtype)
+
 
 
 def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
