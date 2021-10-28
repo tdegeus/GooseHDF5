@@ -883,6 +883,76 @@ def _(
     with h5py.File(a, "r") as a_file, h5py.File(b, "r") as b_file:
         return compare(a_file, b_file, paths_a, paths_a, attrs, matching_dtype)
 
+def compare_rename(
+    a: h5py.File,
+    b: h5py.File,
+    rename: list[str] = None,
+    paths_a: list[str] = None,
+    paths_b: list[str] = None,
+    attrs: bool = True,
+    matching_dtype: bool = False,
+):
+    """
+    Compare two files.
+    Return three dictionaries with differences::
+
+        # plain comparison between a and b
+
+        {
+            "->" : ["/path/in/b/but/not/in/a", ...],
+            "<-" : ["/path/in/a/but/not/in/b", ...],
+            "!=" : ["/path/in/both/but/different/data", ...],
+            "==" : ["/data/matching", ...]
+        }
+
+        # comparison of renamed paths: list of paths in a
+
+        {
+            "!=" : ["/path/in/a/with/rename/path/not_equal", ...],
+            "==" : ["/path/in/a/with/rename/path/matching", ...]
+        }
+
+        # comparison of renamed paths: list of paths in b
+
+        {
+            "!=" : ["/path/in/b/with/rename/path/not_equal", ...],
+            "==" : ["/path/in/b/with/rename/path/matching", ...]
+        }
+
+    :param a: HDF5-archive (as opened ``h5py.File`` or with the ``filepath``).
+    :param b: HDF5-archive (as opened ``h5py.File`` or with the ``filepath``).
+    :param rename: List with with renamed pairs: ``[["/a/0", "/b/1"], ...]``.
+    :param paths_a: Paths from ``a`` to consider. Default: read from :py:func:`getdatapaths`.
+    :param paths_b: Paths from ``b`` to consider. Default: read from :py:func:`getdatapaths`.
+    :param attrs: Compare attributes (the same way at datasets).
+    :param matching_dtype: Check that not only the data but also the type matches.
+    """
+
+    if rename is None:
+        empty = {"!=": [], "==": []}
+        return compare(a, b, paths_a, paths_b, attrs, matching_dtype), empty, empty
+
+    paths_a, paths_b = _compare_paths(a, b, paths_a, paths_b, attrs)
+
+    for path_a, path_b in rename:
+        if path_a not in paths_a or path_b not in paths_b:
+            raise OSError("Renamed paths must be present")
+        paths_a.remove(path_a)
+        paths_b.remove(path_b)
+
+    ret = compare(a, b, paths_a, paths_b, attrs, matching_dtype)
+    ret_a = {"!=": [], "==": []}
+    ret_b = {"!=": [], "==": []}
+
+    for path_a, path_b in rename:
+        if not equal(a, b, path_a, path_b, attrs=attrs, matching_dtype=matching_dtype):
+            ret_a["!="].append(path_a)
+            ret_b["!="].append(path_b)
+        else:
+            ret_a["=="].append(path_a)
+            ret_b["=="].append(path_b)
+
+    return ret, ret_a, ret_b
 
 
 def copy_dataset(source, dest, paths, compress=False, double_to_float=False):

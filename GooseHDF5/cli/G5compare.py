@@ -38,7 +38,7 @@ import warnings
 
 import h5py
 
-from .. import compare
+from .. import compare_rename
 from .. import equal
 from .. import getdatapaths
 from .. import version
@@ -164,35 +164,28 @@ class String:
         return str(self) < str(other)
 
 
-def check_isfile(fname):
-    if not os.path.isfile(fname):
-        raise OSError(f'"{fname}" does not exist')
+def main():
 
+    class Parser(argparse.ArgumentParser):
+        def print_help(self):
+            print(__doc__)
 
-def check_dataset(source, dest, source_dataset, dest_dataset, check_dtype):
-    r"""
-    Check if the datasets (read outside) "a" and "b" are equal.
-    If not print a message with the "path" to the screen and return "False".
-    """
+    parser = Parser()
+    parser.add_argument("-t", "--dtype", required=False, action="store_true")
+    parser.add_argument("-r", "--renamed", required=False, nargs=2, action="append")
+    parser.add_argument("-v", "--version", action="version", version=version)
+    parser.add_argument("a")
+    parser.add_argument("b")
+    args = parser.parse_args()
 
-    if not equal(source, dest, source_dataset, dest_dataset):
-        print(f" !=  {source_dataset}")
-        return False
+    color = theme("dark")
 
-    if check_dtype:
-        if source[source_dataset].dtype != dest[dest_dataset].dtype:
-            print(f"type {source_dataset}")
-            return False
+    for filepath in [args.a, args.b]:
+        if not os.path.isfile(filepath):
+            raise OSError(f'"{filepath}" does not exist')
 
-    return True
-
-
-def _check_plain(source, other, check_dtype, color):
-    r"""
-    Support function for "check_plain."
-    """
-
-    comp = compare(source, other, matching_dtype=check_dtype)
+    with h5py.File(args.a, "r") as a, h5py.File(args.b, "r") as b:
+        comp, r_a, r_b = compare_rename(a, b, rename=args.renamed, matching_dtype=args.dtype)
 
     n = 0
     for key in comp:
@@ -200,102 +193,31 @@ def _check_plain(source, other, check_dtype, color):
             for item in comp[key]:
                 n = max(n, len(item))
 
+    for item in r_a["=="]:
+        n = max(n, len(item))
+
     paths = []
     for key in comp:
         if key != "==":
             for item in comp[key]:
-                paths += [(item, key)]
+                paths += [(item, item, key)]
+
+    for path_a, path_b in zip(r_a["!="], r_b["!="]):
+        paths += [(path_a, path_b, "!=")]
 
     paths = sorted(paths, key=lambda v: v[0])
 
-    for path, key in paths:
+    for path_a, path_b, key in paths:
         if key == "<-":
-            print(" " * n + " <- " + String(path, color=color["<-"]).format())
+            print(" " * n + " <- " + String(path_b, color=color["<-"]).format())
         elif key == "->":
-            print(String(path, color=color["->"], width=n).format() + " -> ")
+            print(String(path_a, color=color["->"], width=n).format() + " -> ")
         else:
             print(
-                String(path, color=color["!="], width=n).format()
+                String(path_a, color=color["!="], width=n).format()
                 + " != "
-                + String(path, color=color["!="], width=n).format()
+                + String(path_b, color=color["!="], width=n).format()
             )
-
-
-def check_plain(source_name, other_name, check_dtype, color):
-    r"""
-    Check all datasets (without allowing for renamed datasets).
-    """
-    with h5py.File(source_name, "r") as source:
-        with h5py.File(other_name, "r") as other:
-            _check_plain(source, other, check_dtype, color)
-
-
-def _check_renamed(source, other, renamed, check_dtype):
-    r"""
-    Support function for "check_renamed."
-    """
-
-    s2o = {i: i for i in list(getdatapaths(source))}
-    o2s = {i: i for i in list(getdatapaths(other))}
-
-    for s, o in renamed:
-        s2o[s] = o
-        o2s[o] = s
-
-    for _, path in s2o.items():
-        if path not in o2s:
-            print(f" ->  {path}")
-
-    for _, path in o2s.items():
-        if path not in s2o:
-            print(f" <-  {path}")
-
-    for new_path, path in s2o.items():
-        if new_path in o2s:
-            check_dataset(source, other, path, new_path, check_dtype)
-
-
-def check_renamed(source_name, other_name, renamed, check_dtype):
-    r"""
-    Check all datasets while allowing for renamed datasets.
-    renamed = [['source_name1', 'other_name1'], ['source_name2', 'other_name2'], ...]
-    """
-
-    with h5py.File(source_name, "r") as source:
-        with h5py.File(other_name, "r") as other:
-            _check_renamed(source, other, renamed, check_dtype)
-
-
-def main():
-
-    try:
-
-        class Parser(argparse.ArgumentParser):
-            def print_help(self):
-                print(__doc__)
-
-        parser = Parser()
-        parser.add_argument("-t", "--dtype", required=False, action="store_true")
-        parser.add_argument("-r", "--renamed", required=False, nargs=2, action="append")
-        parser.add_argument("-v", "--version", action="version", version=version)
-        parser.add_argument("source")
-        parser.add_argument("other")
-        args = parser.parse_args()
-
-        check_isfile(args.source)
-        check_isfile(args.other)
-
-        if not args.renamed:
-            check_plain(args.source, args.other, args.dtype, theme("dark"))
-            return 0
-
-        check_renamed(args.source, args.other, args.renamed, args.dtype)
-
-    except Exception as e:
-
-        print(e)
-        return 1
-
 
 if __name__ == "__main__":
 
