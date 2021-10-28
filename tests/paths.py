@@ -190,6 +190,8 @@ class Test_itereator(unittest.TestCase):
                 check_datasets = g5.compare(source, other, attrs=False)
 
         expected_all = {
+            "->": ["/meta"],
+            "<-": [],
             "!=": [
                 "/a/ne_data",
                 "/b/ne_data",
@@ -199,7 +201,6 @@ class Test_itereator(unittest.TestCase):
                 "/f/ne_dtype_attr",
                 "/meta_ne_attr",
             ],
-            "->": ["/meta"],
             "==": [
                 "/a/equal",
                 "/b/equal",
@@ -212,6 +213,8 @@ class Test_itereator(unittest.TestCase):
         }
 
         expected_datasets = {
+            "->": [],
+            "<-": [],
             "!=": [
                 "/a/ne_data",
                 "/b/ne_data",

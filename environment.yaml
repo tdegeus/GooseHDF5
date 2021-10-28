@@ -1,0 +1,7 @@
+channels:
+- conda-forge
+dependencies:
+- click
+- h5py
+- numpy
+- python

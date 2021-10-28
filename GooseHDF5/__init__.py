@@ -2,7 +2,6 @@ import functools
 import operator
 import posixpath
 import warnings
-from collections import defaultdict
 from functools import singledispatch
 from typing import Union
 
@@ -108,9 +107,7 @@ def getdatapaths(file, root: str = "/"):
     :param root: Start a certain point along the path-tree.
     :return: ``list[str]``.
     """
-    return list(getdatasets(file, root=root)) + list(
-        getgroups(file, root=root, has_attrs=True)
-    )
+    return list(getdatasets(file, root=root)) + list(getgroups(file, root=root, has_attrs=True))
 
 
 def getgroups(file: h5py.File, root: str = "/", has_attrs=False):
@@ -125,9 +122,7 @@ def getgroups(file: h5py.File, root: str = "/", has_attrs=False):
 
     keys = []
     group = file[root]
-    group.visit(
-        lambda key: keys.append(key) if isinstance(group[key], h5py.Group) else None
-    )
+    group.visit(lambda key: keys.append(key) if isinstance(group[key], h5py.Group) else None)
     keys = [join(root, key) for key in keys]
 
     if has_attrs:
@@ -244,9 +239,7 @@ def getpaths(data, root="/", max_depth=None, fold=None):
         specifically requested to be folded.
     """
 
-    warnings.warn(
-        "getpaths() is deprecated, use getdatasets().", warnings.DeprecationWarning
-    )
+    warnings.warn("getpaths() is deprecated, use getdatasets().", warnings.DeprecationWarning)
     return getdatasets(data, root, max_depth, fold)
 
 
@@ -577,17 +570,13 @@ def copy(
     dest_datasets = np.array(dest_datasets)
 
     if root:
-        dest_datasets = np.array(
-            [join(root, path, root=True) for path in dest_datasets]
-        )
+        dest_datasets = np.array([join(root, path, root=True) for path in dest_datasets])
 
     for path in dest_datasets:
         if exists(dest, path):
             raise OSError(f'Dataset "{path}" already exists')
 
-    isgroup = np.array(
-        [isinstance(source[path], h5py.Group) for path in source_datasets]
-    )
+    isgroup = np.array([isinstance(source[path], h5py.Group) for path in source_datasets])
 
     if recursive:
         _copy(source, dest, source_datasets[isgroup], dest_datasets[isgroup])
@@ -626,9 +615,7 @@ def copydatasets(
     :param root: Path prefix for all ``dest_datasets``.
     """
 
-    warnings.warn(
-        "copydatasets() is deprecated, use copy().", warnings.DeprecationWarning
-    )
+    warnings.warn("copydatasets() is deprecated, use copy().", warnings.DeprecationWarning)
 
     return copy(source, dest, source_datasets, dest_datasets, root)
 
@@ -785,7 +772,9 @@ def allequal(
     return True
 
 
-def _compare_paths(a: h5py.File, b: h5py.File, paths_a: list[str], paths_b: list[str], attrs: bool) -> type[list[str], list[str]]:
+def _compare_paths(
+    a: h5py.File, b: h5py.File, paths_a: list[str], paths_b: list[str], attrs: bool
+) -> type[list[str], list[str]]:
     """
     Default paths for :py:func:`compare`.
     """
@@ -882,6 +871,7 @@ def _(
 
     with h5py.File(a, "r") as a_file, h5py.File(b, "r") as b_file:
         return compare(a_file, b_file, paths_a, paths_a, attrs, matching_dtype)
+
 
 def compare_rename(
     a: h5py.File,
@@ -982,9 +972,7 @@ def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
             dtype = source[path].dtype
             if dtype == np.float64 and double_to_float:
                 dtype = np.float32
-            dset = dest.create_dataset(
-                path, data.shape, dtype=dtype, compression="gzip"
-            )
+            dset = dest.create_dataset(path, data.shape, dtype=dtype, compression="gzip")
             dset[:] = data
 
         for key in source[path].attrs:

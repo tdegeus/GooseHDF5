@@ -184,9 +184,7 @@ def main():
             # Print datasets
 
             paths = list(
-                getdatasets(
-                    source, root=args.root, max_depth=args.max_depth, fold=args.fold
-                )
+                getdatasets(source, root=args.root, max_depth=args.max_depth, fold=args.fold)
             )
             if not args.datasets:
                 paths += list(getgroups(source, root=args.root, has_attrs=True))
