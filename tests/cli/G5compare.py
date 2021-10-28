@@ -6,11 +6,7 @@ import numpy as np
 
 
 def run(cmd):
-    out = list(
-        filter(
-            None, subprocess.check_output(cmd, shell=True).decode("utf-8").split("\n")
-        )
-    )
+    out = list(filter(None, subprocess.check_output(cmd, shell=True).decode("utf-8").split("\n")))
     return [i.rstrip().replace("\r", "") for i in out]
 
 
@@ -82,16 +78,16 @@ with h5py.File("a.hdf5", "w") as source:
         meta.attrs["version"] = 1
 
 
-output = sorted(run("G5compare a.hdf5 b.hdf5 -r /d/equal /e/equal"))
+output = sorted(run("G5compare -c none a.hdf5 b.hdf5 -r /d/equal /e/equal"))
 
 expected_output = sorted(
     [
-        " !=  /a/not_equal",
-        " !=  /b/not_equal",
-        " !=  /c/not_equal",
-        " !=  /f/not_equal",
-        " !=  /present",
-        " ->  /meta",
+        "/a/not_equal != /a/not_equal",
+        "/b/not_equal != /b/not_equal",
+        "/c/not_equal != /c/not_equal",
+        "/f/not_equal != /f/not_equal",
+        "/present     != /present",
+        "/meta        ->",
     ]
 )
 

@@ -70,9 +70,7 @@ def main():
 
             with h5py.File(filename, "r") as source:
                 with h5py.File(tempname, "w") as tmp:
-                    copy_dataset(
-                        source, tmp, getdatasets(source), args.compress, args.float
-                    )
+                    copy_dataset(source, tmp, getdatasets(source), args.compress, args.float)
 
             os.replace(tempname, filename)
 

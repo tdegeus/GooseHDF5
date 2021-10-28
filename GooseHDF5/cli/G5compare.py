@@ -24,6 +24,10 @@
         Renamed paths: this option takes two arguments, one for ``source`` and one for ``other``.
         It can repeated, e.g. ``G5compare a.h5 b.h5 -r /a /b  -r /c /d``
 
+    -c, --color=STR (none, dark)
+        Color theme.
+        default: dark.
+
     -h, --help
         Show help.
 
@@ -39,8 +43,6 @@ import warnings
 import h5py
 
 from .. import compare_rename
-from .. import equal
-from .. import getdatapaths
 from .. import version
 
 warnings.filterwarnings("ignore")
@@ -165,12 +167,12 @@ class String:
 
 
 def main():
-
     class Parser(argparse.ArgumentParser):
         def print_help(self):
             print(__doc__)
 
     parser = Parser()
+    parser.add_argument("-c", "--color", type=str, default="dark")
     parser.add_argument("-t", "--dtype", required=False, action="store_true")
     parser.add_argument("-r", "--renamed", required=False, nargs=2, action="append")
     parser.add_argument("-v", "--version", action="version", version=version)
@@ -178,7 +180,7 @@ def main():
     parser.add_argument("b")
     args = parser.parse_args()
 
-    color = theme("dark")
+    color = theme(args.color)
 
     for filepath in [args.a, args.b]:
         if not os.path.isfile(filepath):
@@ -218,6 +220,7 @@ def main():
                 + " != "
                 + String(path_b, color=color["!="], width=n).format()
             )
+
 
 if __name__ == "__main__":
 

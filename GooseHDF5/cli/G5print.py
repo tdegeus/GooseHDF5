@@ -96,18 +96,14 @@ def main():
             if len(args.dataset) == 0:
                 print_header = True
                 datasets = list(
-                    getdatasets(
-                        source, root=args.root, max_depth=args.max_depth, fold=args.fold
-                    )
+                    getdatasets(source, root=args.root, max_depth=args.max_depth, fold=args.fold)
                 )
                 datasets += list(getgroups(source, has_attrs=True))
                 datasets = sorted(datasets)
             elif args.regex:
                 print_header = True
                 paths = list(
-                    getdatasets(
-                        source, root=args.root, max_depth=args.max_depth, fold=args.fold
-                    )
+                    getdatasets(source, root=args.root, max_depth=args.max_depth, fold=args.fold)
                 )
                 paths += list(getgroups(source, has_attrs=True))
                 datasets = []
