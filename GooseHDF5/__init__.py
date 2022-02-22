@@ -823,6 +823,7 @@ def compare(
     :param paths_b: Paths from ``b`` to consider. Default: read from :py:func:`getdatapaths`.
     :param attrs: Compare attributes (the same way at datasets).
     :param matching_dtype: Check that not only the data but also the type matches.
+    :return: Dictionary with difference.
     """
     raise NotImplementedError("Overload not found.")
 
