@@ -3,7 +3,7 @@
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 
 sphinx:
-   configuration: docs/conf.py
+  configuration: docs/conf.py
 
 version: 2
 
@@ -12,6 +12,6 @@ conda:
 
 python:
   install:
-    - method: pip
-      path: .
+  - method: pip
+    path: .
   system_packages: true
