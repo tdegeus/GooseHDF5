@@ -994,13 +994,121 @@ def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
             dest[path].attrs[key] = source[path].attrs[key]
 
 
+def print_plain(source, paths: list[str]):
+    r"""
+    Print the paths to all datasets (one per line).
+    :param paths: List of paths.
+    """
+
+    for path in paths:
+        print(path)
+
+
+def print_info(source, paths: list[str]):
+    r"""
+    Print the paths to all datasets (one per line), including type information.
+    :param paths: List of paths.
+    """
+
+    def has_attributes(lst):
+        for i in lst:
+            if i != "-" and i != "0":
+                return True
+        return False
+
+    out = {"path": [], "size": [], "shape": [], "dtype": [], "attrs": []}
+
+    for path in paths:
+        if path in source:
+            data = source[path]
+            out["path"] += [path]
+            out["attrs"] += [str(len(data.attrs))]
+            if isinstance(data, h5py.Dataset):
+                out["size"] += [str(data.size)]
+                out["shape"] += [str(data.shape)]
+                out["dtype"] += [str(data.dtype)]
+            else:
+                out["size"] += ["-"]
+                out["shape"] += ["-"]
+                out["dtype"] += ["-"]
+        else:
+            out["path"] += [path]
+            out["size"] += ["-"]
+            out["shape"] += ["-"]
+            out["dtype"] += ["-"]
+            out["attrs"] += ["-"]
+
+    width = {}
+    for key in out:
+        width[key] = max(len(i) for i in out[key])
+        width[key] = max(width[key], len(key))
+
+    fmt = "{0:%ds} {1:%ds} {2:%ds} {3:%ds}" % (
+        width["path"],
+        width["size"],
+        width["shape"],
+        width["dtype"],
+    )
+
+    if has_attributes(out["attrs"]):
+        fmt += " {4:%ds}" % width["attrs"]
+
+    print(fmt.format("path", "size", "shape", "dtype", "attrs"))
+    print(
+        fmt.format(
+            "=" * width["path"],
+            "=" * width["size"],
+            "=" * width["shape"],
+            "=" * width["dtype"],
+            "=" * width["attrs"],
+        )
+    )
+
+    for i in range(len(out["path"])):
+        print(
+            fmt.format(
+                out["path"][i],
+                out["size"][i],
+                out["shape"][i],
+                out["dtype"][i],
+                out["attrs"][i],
+            )
+        )
+
+
+def print_attribute(source, paths: list[str]):
+    r"""
+    Print paths to dataset and to all underlying attributes.
+    :param paths: List of paths.
+    """
+
+    for path in paths:
+        if path in source:
+
+            data = source[path]
+
+            print(f'"{path}"')
+
+            if isinstance(data, h5py.Dataset):
+                print(
+                    "- prop: size = {:s}, shape = {:s}, dtype = {:s}".format(
+                        str(data.size), str(data.shape), str(data.dtype)
+                    )
+                )
+
+            for key in data.attrs:
+                print("- attr: " + key + " = ")
+                print("        " + str(data.attrs[key]))
+
+            print("")
+
+
 def _G5print_parser():
     """
     Return parser for :py:func:`G5print`.
     """
 
     desc = "Print (one, several, or all) datasets in a HDF5-file."
-
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument("--full", action="store_true", help="Print full array")
     parser.add_argument("--no-data", action="store_true", help="Don't print data")
@@ -1016,7 +1124,7 @@ def _G5print_parser():
     return parser
 
 
-def G5print(cli_args=None):
+def G5print(cli_args: list[str] = None):
     """
     Command-line tool to print datasets from a file, see ``--help``.
     """
@@ -1092,6 +1200,58 @@ def G5print(cli_args=None):
 def _G5print_catch():
     try:
         G5print(sys.argv[1:])
+    except Exception as e:
+        print(e)
+        return 1
+
+
+def _G5list_parser():
+    """
+    Return parser for :py:func:`G5list`.
+    """
+
+    desc = "List datasets (or groups of datasets) in a HDF5-file"
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument("-D", "--datasets", action="store_true", help="Print only datasets")
+    parser.add_argument("-d", "--max-depth", type=int, help="Maximum depth to display")
+    parser.add_argument("-f", "--fold", action="append", help="Fold paths")
+    parser.add_argument("-i", "--info", action="store_true", help="Print info: shape, dtype")
+    parser.add_argument("-l", "--long", action="store_true", help="--info but with attributes")
+    parser.add_argument("-r", "--root", default="/", help="Start somewhere in the path-tree")
+    parser.add_argument("-v", "--version", action="version", version=version)
+    parser.add_argument("source")
+    return parser
+
+
+def G5list(cli_args: list[str] = None):
+    """
+    Command-line tool to print datasets from a file, see ``--help``.
+    """
+
+    parser = _G5list_parser()
+    args = parser.parse_args([str(arg) for arg in cli_args])
+
+    if not os.path.isfile(args.source):
+        raise OSError(f'"{args.source}" does not exist')
+
+    with h5py.File(args.source, "r") as source:
+
+        paths = list(getdatasets(source, root=args.root, max_depth=args.max_depth, fold=args.fold))
+        if not args.datasets:
+            paths += getgroups(source, root=args.root, has_attrs=True, max_depth=args.max_depth)
+        paths = sorted(list(set(paths)))
+
+        if args.info:
+            print_info(source, paths)
+        elif args.long:
+            print_attribute(source, paths)
+        else:
+            print_plain(source, paths)
+
+
+def _G5list_catch():
+    try:
+        G5list(sys.argv[1:])
     except Exception as e:
         print(e)
         return 1

@@ -20,7 +20,7 @@ setup(
         "console_scripts": [
             f"G5check = {project_name}.cli.G5check:main",
             f"G5compare = {project_name}.cli.G5compare:main",
-            f"G5list = {project_name}.cli.G5list:main",
+            f"G5list = {project_name}:_G5list_catch",
             f"G5print = {project_name}:_G5print_catch",
             f"G5repack = {project_name}.cli.G5repack:main",
             f"G5repair = {project_name}.cli.G5repair:main",
