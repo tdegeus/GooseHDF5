@@ -114,13 +114,16 @@ def getdatapaths(file, root: str = "/"):
     return list(getdatasets(file, root=root)) + list(getgroups(file, root=root, has_attrs=True))
 
 
-def getgroups(file: h5py.File, root: str = "/", has_attrs=False):
+def getgroups(
+    file: h5py.File, root: str = "/", has_attrs: bool = False, max_depth: int = None
+) -> list[str]:
     """
-    Iterator to transverse all groups in a HDF5-archive.
+    Paths of all groups in a HDF5-archive.
 
     :param file: A HDF5-archive.
     :param root: Start a certain point along the path-tree.
     :param has_attrs: Return only groups that have attributes.
+    :param int max_depth: Set a maximum depth beyond which groups are folded.
     :return: ``list[str]``.
     """
 
@@ -131,6 +134,13 @@ def getgroups(file: h5py.File, root: str = "/", has_attrs=False):
 
     if has_attrs:
         keys = [key for key in keys if len(file[key].attrs) > 0]
+
+    if max_depth is not None:
+        n = len(root.split("/")) - 1
+        for i, path in enumerate(keys):
+            if len(path.split("/")) - 1 >= n + max_depth:
+                keys[i] = posixpath.join("/", *path.split("/")[: n + max_depth]) + "/..."
+        keys = list(set(keys))
 
     return keys
 
