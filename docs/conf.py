@@ -6,7 +6,7 @@ author = "Tom de Geus"
 
 # General configuration
 
-extensions = ["sphinx.ext.imgmath", "sphinx.ext.autodoc", "sphinx.ext.autosummary"]
+extensions = ["sphinx.ext.imgmath", "sphinx.ext.autodoc", "sphinx.ext.autosummary", "sphinxarg.ext"]
 
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
