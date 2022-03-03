@@ -5,3 +5,6 @@ dependencies:
 - h5py
 - numpy
 - python
+- sphinx
+- sphinx-argparse
+- sphinx_rtd_theme

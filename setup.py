@@ -18,12 +18,12 @@ setup(
     install_requires=["h5py", "click"],
     entry_points={
         "console_scripts": [
-            "G5check = GooseHDF5.cli.G5check:main",
-            "G5compare = GooseHDF5.cli.G5compare:main",
-            "G5list = GooseHDF5.cli.G5list:main",
-            "G5print = GooseHDF5.cli.G5print:main",
-            "G5repack = GooseHDF5.cli.G5repack:main",
-            "G5repair = GooseHDF5.cli.G5repair:main",
+            f"G5check = {project_name}.cli.G5check:main",
+            f"G5compare = {project_name}.cli.G5compare:main",
+            f"G5list = {project_name}.cli.G5list:main",
+            f"G5print = {project_name}:_G5print_catch",
+            f"G5repack = {project_name}.cli.G5repack:main",
+            f"G5repair = {project_name}.cli.G5repair:main",
         ]
     },
 )

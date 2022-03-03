@@ -1,6 +1,10 @@
+import argparse
 import functools
 import operator
+import os
 import posixpath
+import re
+import sys
 import warnings
 from functools import singledispatch
 from typing import Union
@@ -978,3 +982,106 @@ def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
 
         for key in source[path].attrs:
             dest[path].attrs[key] = source[path].attrs[key]
+
+
+def _G5print_parser():
+    """
+    Return parser for :py:func:`G5print`.
+    """
+
+    desc = "Print (one, several, or all) datasets in a HDF5-file."
+
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument("--full", action="store_true", help="Print full array")
+    parser.add_argument("--no-data", action="store_true", help="Don't print data")
+    parser.add_argument("--regex", action="store_true", help="Evaluate dataset name as a regex")
+    parser.add_argument("-a", "--attrs", action="store_true", help="Print attributes")
+    parser.add_argument("-d", "--max-depth", type=int, help="Maximum depth to display")
+    parser.add_argument("-f", "--fold", action="append", help="Fold paths")
+    parser.add_argument("-i", "--info", action="store_true", help="Print information: shape, dtype")
+    parser.add_argument("-r", "--root", default="/", help="Start somewhere in the path-tree")
+    parser.add_argument("-v", "--version", action="version", version=version)
+    parser.add_argument("source", help="File path")
+    parser.add_argument("dataset", nargs="*", help="Path to datasets to print (default: all)")
+    return parser
+
+
+def G5print(cli_args=None):
+    """
+    Command-line tool to print datasets from a file, see ``--help``.
+    """
+
+    parser = _G5print_parser()
+    args = parser.parse_args([str(arg) for arg in cli_args])
+
+    if not os.path.isfile(args.source):
+        print("File does not exist")
+        return 1
+
+    if args.full:
+        np.set_printoptions(threshold=sys.maxsize)
+
+    with h5py.File(args.source, "r") as source:
+
+        if len(args.dataset) == 0:
+            print_header = True
+            datasets = list(
+                getdatasets(source, root=args.root, max_depth=args.max_depth, fold=args.fold)
+            )
+            datasets += list(getgroups(source, root=args.root, has_attrs=True))
+            datasets = sorted(datasets)
+        elif args.regex:
+            print_header = True
+            paths = list(
+                getdatasets(source, root=args.root, max_depth=args.max_depth, fold=args.fold)
+            )
+            paths += list(getgroups(source, root=args.root, has_attrs=True))
+            datasets = []
+            for dataset in args.dataset:
+                datasets += [path for path in paths if re.match(dataset, path)]
+            datasets = sorted(datasets)
+        else:
+            datasets = args.dataset
+            print_header = len(datasets) > 1
+
+        for dataset in datasets:
+            if dataset not in source:
+                print(f'"{dataset}" not in "{source.filename}"')
+                return 1
+
+        for i, dataset in enumerate(datasets):
+
+            data = source[dataset]
+
+            if args.info:
+                if isinstance(data, h5py.Dataset):
+                    print(
+                        "path = {:s}, size = {:s}, shape = {:s}, dtype = {:s}".format(
+                            dataset,
+                            str(data.size),
+                            str(data.shape),
+                            str(data.dtype),
+                        )
+                    )
+                else:
+                    print(f"path = {dataset}")
+            elif print_header:
+                print(dataset)
+
+            for key in data.attrs:
+                print(key + " : " + str(data.attrs[key]))
+
+            if isinstance(data, h5py.Dataset):
+                if not args.no_data:
+                    print(data[...])
+
+            if len(datasets) > 1 and i < len(datasets) - 1:
+                print("")
+
+
+def _G5print_catch():
+    try:
+        G5print(sys.argv[1:])
+    except Exception as e:
+        print(e)
+        return 1

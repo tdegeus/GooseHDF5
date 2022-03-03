@@ -5,6 +5,14 @@
 Command-line tools
 ******************
 
+G5print
+-------
+
+.. argparse::
+    :module: GooseHDF5
+    :func: _G5print_parser
+    :prog: G5print
+
 Overview
 --------
 
@@ -12,7 +20,6 @@ Overview
 
     GooseHDF5.cli.G5check
     GooseHDF5.cli.G5list
-    GooseHDF5.cli.G5print
     GooseHDF5.cli.G5repair
     GooseHDF5.cli.G5compare
     GooseHDF5.cli.G5repack
@@ -26,11 +33,6 @@ G5list
 ------
 
 .. automodule:: GooseHDF5.cli.G5list
-
-G5print
--------
-
-.. automodule:: GooseHDF5.cli.G5print
 
 G5repair
 --------
