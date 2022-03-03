@@ -6,6 +6,18 @@ Python module
 Overview
 ========
 
+Convenience functions
+---------------------
+
+.. autosummary::
+
+  GooseHDF5.dump
+  GooseHDF5.copy
+  GooseHDF5.copy_dataset
+  GooseHDF5.copydatasets
+  GooseHDF5.compare
+  GooseHDF5.compare_rename
+
 Manipulate path
 ---------------
 
@@ -19,8 +31,9 @@ Iterators
 
 .. autosummary::
 
+  GooseHDF5.getdatapaths
   GooseHDF5.getdatasets
-  GooseHDF5.getpaths
+  GooseHDF5.getgroups
   GooseHDF5.filter_datasets
   GooseHDF5.copydatasets
 
