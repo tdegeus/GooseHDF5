@@ -579,6 +579,9 @@ def copy(
     :param recursive: If the source is a group, copy all objects within that group recursively.
     """
 
+    if len(source_datasets) == 0:
+        return
+
     source_datasets = np.array([abspath(path) for path in source_datasets])
 
     if not dest_datasets:
