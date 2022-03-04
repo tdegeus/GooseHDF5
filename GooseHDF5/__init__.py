@@ -136,10 +136,10 @@ def getgroups(
         keys = [key for key in keys if len(file[key].attrs) > 0]
 
     if max_depth is not None:
-        n = len(root.split("/")) - 1
+        n = len(list(filter(None, root.split("/"))))
         for i, path in enumerate(keys):
-            if len(path.split("/")) - 1 >= n + max_depth:
-                keys[i] = posixpath.join("/", *path.split("/")[: n + max_depth]) + "/..."
+            if len(path.split("/")) - 1 > n + max_depth:
+                keys[i] = posixpath.join("/", *path.split("/")[: n + max_depth + 1]) + "/..."
         keys = list(set(keys))
 
     return keys
@@ -305,7 +305,10 @@ def _getpaths_maxdepth(file, root, max_depth):
                 yield path
 
             elif len(path.split("/")) - 1 >= max_depth:
-                yield path + "/..."
+                if len(list(iterator(item, path, max_depth + 1))) > 0:
+                    yield path + "/..."
+                else:
+                    yield path
 
             elif isinstance(item, h5py.Group):
                 yield from iterator(item, path, max_depth)
