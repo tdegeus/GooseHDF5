@@ -5,7 +5,6 @@ import unittest
 
 import h5py
 import numpy as np
-import shelephant
 
 
 dirname = os.path.join(os.path.abspath(os.path.dirname(__file__)), "mytest")

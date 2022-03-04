@@ -51,7 +51,6 @@ jobs:
       run: |
         python G5check.py
         python G5compare.py
-        python G5list.py
         python G5print.py
         python G5repair.py
         python G5repack.py
