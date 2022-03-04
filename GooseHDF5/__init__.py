@@ -108,7 +108,7 @@ def getdatapaths(file, root: str = "/"):
     Get paths to all datasets and groups that contain attributes.
 
     :param file: A HDF5-archive.
-    :param root: Start a certain point along the path-tree.
+    :param root: Start at a certain point along the path-tree.
     :return: ``list[str]``.
     """
     return list(getdatasets(file, root=root)) + list(getgroups(file, root=root, has_attrs=True))
@@ -121,7 +121,7 @@ def getgroups(
     Paths of all groups in a HDF5-archive.
 
     :param file: A HDF5-archive.
-    :param root: Start a certain point along the path-tree.
+    :param root: Start at a certain point along the path-tree.
     :param has_attrs: Return only groups that have attributes.
     :param int max_depth: Set a maximum depth beyond which groups are folded.
     :return: ``list[str]``.
@@ -727,10 +727,11 @@ def _equal(a, b, attrs, matching_dtype):
 
 
 def equal(
-    source,
-    dest,
-    source_dataset,
-    dest_dataset=None,
+    source: h5py.File,
+    dest: h5py.File,
+    source_dataset: str,
+    dest_dataset: str = None,
+    root: str = None,
     attrs: bool = True,
     matching_dtype: bool = False,
 ):
@@ -741,12 +742,16 @@ def equal(
     :param h5py.File dest: The destination HDF5-archive.
     :param list source_datasets: List of dataset-paths in ``source``.
     :param list dest_datasets: List of dataset-paths in ``dest``, defaults to ``source_datasets``.
+    :param root: Path prefix for ``dest_dataset``.
     :param attrs: Compare attributes (the same way at datasets).
     :param matching_dtype: Check that not only the data but also the type matches.
     """
 
     if not dest_dataset:
         dest_dataset = source_dataset
+
+    if root is not None:
+        dest_dataset = join(root, dest_dataset, root=True)
 
     if source_dataset not in source:
         raise OSError(f'"{source_dataset:s} not in {source.filename:s}')
@@ -758,10 +763,11 @@ def equal(
 
 
 def allequal(
-    source,
-    dest,
-    source_datasets,
-    dest_datasets=None,
+    source: h5py.File,
+    dest: h5py.File,
+    source_datasets: list[str],
+    dest_datasets: list[str] = None,
+    root: str = None,
     attrs: bool = True,
     matching_dtype: bool = False,
 ):
@@ -772,6 +778,7 @@ def allequal(
     :param h5py.File dest: The destination HDF5-archive.
     :param list source_datasets: List of dataset-paths in ``source``.
     :param list dest_datasets: List of dataset-paths in ``dest``, defaults to ``source_datasets``.
+    :param root: Path prefix for all ``dest_datasets``.
     :param attrs: Compare attributes (the same way at datasets).
     :param matching_dtype: Check that not only the data but also the type matches.
     """
@@ -780,7 +787,15 @@ def allequal(
         dest_datasets = [path for path in source_datasets]
 
     for source_dataset, dest_dataset in zip(source_datasets, dest_datasets):
-        if not equal(source, dest, source_dataset, dest_dataset, attrs, matching_dtype):
+        if not equal(
+            source,
+            dest,
+            source_dataset,
+            dest_dataset,
+            root=root,
+            attrs=attrs,
+            matching_dtype=matching_dtype,
+        ):
             return False
 
     return True
@@ -817,6 +832,7 @@ def compare(
     b: Union[str, h5py.File],
     paths_a: list[str] = None,
     paths_b: list[str] = None,
+    root: str = None,
     attrs: bool = True,
     matching_dtype: bool = False,
 ):
@@ -1124,13 +1140,14 @@ def _G5print_parser():
     return parser
 
 
-def G5print(cli_args: list[str] = None):
+def G5print(args: list[str]):
     """
     Command-line tool to print datasets from a file, see ``--help``.
+    :param args: Command-line arguments (should be all strings).
     """
 
     parser = _G5print_parser()
-    args = parser.parse_args([str(arg) for arg in cli_args])
+    args = parser.parse_args(args)
 
     if not os.path.isfile(args.source):
         print("File does not exist")
@@ -1223,13 +1240,14 @@ def _G5list_parser():
     return parser
 
 
-def G5list(cli_args: list[str] = None):
+def G5list(args: list[str]):
     """
     Command-line tool to print datasets from a file, see ``--help``.
+    :param args: Command-line arguments (should be all strings).
     """
 
     parser = _G5list_parser()
-    args = parser.parse_args([str(arg) for arg in cli_args])
+    args = parser.parse_args(args)
 
     if not os.path.isfile(args.source):
         raise OSError(f'"{args.source}" does not exist')
