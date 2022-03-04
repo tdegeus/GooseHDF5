@@ -8,20 +8,30 @@ import numpy as np
 import GooseHDF5 as g5
 
 
-class Test_itereator(unittest.TestCase):
-    def test_copy_plain(self):
+dirname = os.path.join(os.path.abspath(os.path.dirname(__file__)), "mytest")
 
-        dirname = "mytest"
-        sourcepath = os.path.join(dirname, "foo_1.h5")
-        destpath = os.path.join(dirname, "bar_1.h5")
+
+class Test_itereator(unittest.TestCase):
+    """ """
+
+    @classmethod
+    def setUpClass(self):
 
         if not os.path.isdir(dirname):
             os.makedirs(dirname)
 
+    @classmethod
+    def tearDownClass(self):
+
+        shutil.rmtree(dirname)
+
+    def test_copy_plain(self):
+
+        sourcepath = os.path.join(dirname, "foo_1.h5")
+        destpath = os.path.join(dirname, "bar_1.h5")
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
         with h5py.File(sourcepath, "w") as source:
-
             with h5py.File(destpath, "w") as dest:
 
                 for d in datasets:
@@ -32,21 +42,30 @@ class Test_itereator(unittest.TestCase):
                 for path in datasets:
                     self.assertTrue(g5.equal(source, dest, path))
 
-        shutil.rmtree(dirname)
+    def test_copy_skip(self):
+
+        sourcepath = os.path.join(dirname, "foo_1.h5")
+        destpath = os.path.join(dirname, "bar_1.h5")
+        datasets = ["/a", "/b/foo", "/c/d/foo"]
+
+        with h5py.File(sourcepath, "w") as source:
+            with h5py.File(destpath, "w") as dest:
+
+                for d in datasets:
+                    source[d] = np.random.rand(10)
+
+                g5.copy(source, dest, datasets + ["/nonexisting"], skip=True)
+
+                for path in datasets:
+                    self.assertTrue(g5.equal(source, dest, path))
 
     def test_copy_nonrecursive(self):
 
-        dirname = "mytest"
         sourcepath = os.path.join(dirname, "foo_1.h5")
         destpath = os.path.join(dirname, "bar_1.h5")
-
-        if not os.path.isdir(dirname):
-            os.makedirs(dirname)
-
         datasets = ["/a", "/b/foo", "/b/bar", "/c/d/foo"]
 
         with h5py.File(sourcepath, "w") as source:
-
             with h5py.File(destpath, "w") as dest:
 
                 for d in datasets:
@@ -61,21 +80,13 @@ class Test_itereator(unittest.TestCase):
                 self.assertFalse(g5.exists(dest, "/b/foo"))
                 self.assertFalse(g5.exists(dest, "/b/bar"))
 
-        shutil.rmtree(dirname)
-
     def test_copy_recursive(self):
 
-        dirname = "mytest"
         sourcepath = os.path.join(dirname, "foo_1.h5")
         destpath = os.path.join(dirname, "bar_1.h5")
-
-        if not os.path.isdir(dirname):
-            os.makedirs(dirname)
-
         datasets = ["/a", "/b/foo", "/b/bar", "/c/d/foo"]
 
         with h5py.File(sourcepath, "w") as source:
-
             with h5py.File(destpath, "w") as dest:
 
                 for d in datasets:
@@ -86,21 +97,13 @@ class Test_itereator(unittest.TestCase):
                 for path in datasets:
                     self.assertTrue(g5.equal(source, dest, path))
 
-        shutil.rmtree(dirname)
-
     def test_copy_attrs(self):
 
-        dirname = "mytest"
         sourcepath = os.path.join(dirname, "foo_2.h5")
         destpath = os.path.join(dirname, "bar_2.h5")
-
-        if not os.path.isdir(dirname):
-            os.makedirs(dirname)
-
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
         with h5py.File(sourcepath, "w") as source:
-
             with h5py.File(destpath, "w") as dest:
 
                 for d in datasets:
@@ -115,21 +118,13 @@ class Test_itereator(unittest.TestCase):
                 for path in datasets:
                     self.assertTrue(g5.equal(source, dest, path))
 
-        shutil.rmtree(dirname)
-
     def test_copy_groupattrs(self):
 
-        dirname = "mytest"
         sourcepath = os.path.join(dirname, "foo_3.h5")
         destpath = os.path.join(dirname, "bar_3.h5")
-
-        if not os.path.isdir(dirname):
-            os.makedirs(dirname)
-
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
         with h5py.File(sourcepath, "w") as source:
-
             with h5py.File(destpath, "w") as dest:
 
                 for d in datasets:
@@ -142,8 +137,6 @@ class Test_itereator(unittest.TestCase):
 
                 for path in datasets:
                     self.assertTrue(g5.equal(source, dest, path))
-
-        shutil.rmtree(dirname)
 
 
 if __name__ == "__main__":

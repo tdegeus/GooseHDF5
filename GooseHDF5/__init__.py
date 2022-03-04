@@ -564,6 +564,7 @@ def copy(
     dest_datasets: list[str] = None,
     root: str = None,
     recursive: bool = True,
+    skip: bool = False,
 ):
     """
     Copy groups/datasets from one HDF5-archive ``source`` to another HDF5-archive ``dest``.
@@ -577,6 +578,7 @@ def copy(
     :param dest_datasets: List of dataset-paths in ``dest``, defaults to ``source_datasets``.
     :param root: Path prefix for all ``dest_datasets``.
     :param recursive: If the source is a group, copy all objects within that group recursively.
+    :param skip: Skip datasets that are not present in source.
     """
 
     if len(source_datasets) == 0:
@@ -588,6 +590,11 @@ def copy(
         dest_datasets = [path for path in source_datasets]
 
     dest_datasets = np.array(dest_datasets)
+
+    if skip:
+        keep = [i in source for i in source_datasets]
+        source_datasets = source_datasets[keep]
+        dest_datasets = dest_datasets[keep]
 
     if root:
         dest_datasets = np.array([join(root, path, root=True) for path in dest_datasets])
@@ -838,7 +845,6 @@ def compare(
     b: Union[str, h5py.File],
     paths_a: list[str] = None,
     paths_b: list[str] = None,
-    root: str = None,
     attrs: bool = True,
     matching_dtype: bool = False,
 ):
