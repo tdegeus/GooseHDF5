@@ -44,6 +44,7 @@ jobs:
       run: |
         python paths.py
         python copying.py
+        python cli.py
 
     - name: Run tests CLI
       working-directory: tests/cli
