@@ -1239,7 +1239,10 @@ def _G5list_parser():
     Return parser for :py:func:`G5list`.
     """
 
-    desc = "List datasets (or groups of datasets) in a HDF5-file"
+    desc = """List datasets (or groups of datasets) in a HDF5-file.
+    Note that if you have a really big file the ``--layer`` option can be much faster than
+    searching the entire file.
+    """
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument("-D", "--datasets", action="store_true", help="Print only datasets")
     parser.add_argument("-d", "--max-depth", type=int, help="Maximum depth to display")
@@ -1247,6 +1250,7 @@ def _G5list_parser():
     parser.add_argument("-i", "--info", action="store_true", help="Print info: shape, dtype")
     parser.add_argument("-l", "--long", action="store_true", help="--info but with attributes")
     parser.add_argument("-r", "--root", default="/", help="Start somewhere in the path-tree")
+    parser.add_argument("-L", "--layer", type=str, help="Print paths at a specific layer")
     parser.add_argument("-v", "--version", action="version", version=version)
     parser.add_argument("source")
     return parser
@@ -1266,10 +1270,15 @@ def G5list(args: list[str]):
 
     with h5py.File(args.source, "r") as source:
 
-        paths = list(getdatasets(source, root=args.root, max_depth=args.max_depth, fold=args.fold))
-        if not args.datasets:
-            paths += getgroups(source, root=args.root, has_attrs=True, max_depth=args.max_depth)
-        paths = sorted(list(set(paths)))
+        if args.layer is not None:
+            paths = sorted(join(args.layer, i, root=True) for i in source[args.layer])
+        else:
+            paths = list(
+                getdatasets(source, root=args.root, max_depth=args.max_depth, fold=args.fold)
+            )
+            if not args.datasets:
+                paths += getgroups(source, root=args.root, has_attrs=True, max_depth=args.max_depth)
+            paths = sorted(list(set(paths)))
 
         if args.info:
             print_info(source, paths)
