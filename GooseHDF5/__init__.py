@@ -1271,7 +1271,7 @@ def G5list(args: list[str]):
     with h5py.File(args.source, "r") as source:
 
         if args.layer is not None:
-            paths = sorted([i for i in source[args.layer]])
+            paths = sorted([join(args.layer, i) for i in source[args.layer]])
         else:
             paths = list(getdatasets(source, root=args.root, max_depth=args.max_depth, fold=args.fold))
             if not args.datasets:
