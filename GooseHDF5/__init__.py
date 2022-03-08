@@ -1042,11 +1042,20 @@ def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
             dest[path].attrs[key] = source[path].attrs[key]
 
 
-def print_plain(source, paths: list[str]):
+def print_plain(source, paths: list[str], show_links: bool = False):
     r"""
     Print the paths to all datasets (one per line).
     :param paths: List of paths.
+    :param show_links: Show the path the link points to.
     """
+
+    if show_links:
+        for path in paths:
+            if isinstance(source.get(path, getlink=True), h5py.SoftLink):
+                print(path + " -> " + source.get(path, getlink=True).path)
+            else:
+                print(path)
+        return
 
     for path in paths:
         print(path)
@@ -1268,9 +1277,10 @@ def _G5list_parser():
     parser.add_argument("-d", "--max-depth", type=int, help="Maximum depth to display")
     parser.add_argument("-f", "--fold", action="append", help="Fold paths")
     parser.add_argument("-i", "--info", action="store_true", help="Print info: shape, dtype")
+    parser.add_argument("-L", "--layer", type=str, help="Print paths at a specific layer")
     parser.add_argument("-l", "--long", action="store_true", help="--info but with attributes")
     parser.add_argument("-r", "--root", default="/", help="Start somewhere in the path-tree")
-    parser.add_argument("-L", "--layer", type=str, help="Print paths at a specific layer")
+    parser.add_argument("-s", "--links", action="store_true", help="Show destination of soft links")
     parser.add_argument("-v", "--version", action="version", version=version)
     parser.add_argument("source")
     return parser
@@ -1305,7 +1315,7 @@ def G5list(args: list[str]):
         elif args.long:
             print_attribute(source, paths)
         else:
-            print_plain(source, paths)
+            print_plain(source, paths, show_links=args.links)
 
 
 def _G5list_catch():
