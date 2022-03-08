@@ -42,6 +42,50 @@ class Test_itereator(unittest.TestCase):
                 for path in datasets:
                     self.assertTrue(g5.equal(source, dest, path))
 
+    def test_copy_softlinks(self):
+
+        sourcepath = os.path.join(dirname, "foo_1.h5")
+        destpath = os.path.join(dirname, "bar_1.h5")
+        datasets = ["/a", "/b/foo", "/c/d/foo"]
+        links = ["/mylink/a", "/mylink/b/foo", "/mylink/c/d/foo"]
+
+        with h5py.File(sourcepath, "w") as source:
+            with h5py.File(destpath, "w") as dest:
+
+                for link, d in zip(links, datasets):
+                    source[d] = np.random.rand(10)
+                    source[link] = h5py.SoftLink(d)
+
+                g5.copy(source, dest, datasets + links, expand_soft=False)
+
+                for path in datasets + links:
+                    self.assertTrue(g5.equal(source, dest, path))
+                for path in datasets:
+                    self.assertTrue(not isinstance(dest.get(path, getlink=True), h5py.SoftLink))
+                for path in links:
+                    self.assertTrue(isinstance(dest.get(path, getlink=True), h5py.SoftLink))
+
+    def test_copy_expand_softlinks(self):
+
+        sourcepath = os.path.join(dirname, "foo_1.h5")
+        destpath = os.path.join(dirname, "bar_1.h5")
+        datasets = ["/a", "/b/foo", "/c/d/foo"]
+        links = ["/mylink/a", "/mylink/b/foo", "/mylink/c/d/foo"]
+
+        with h5py.File(sourcepath, "w") as source:
+            with h5py.File(destpath, "w") as dest:
+
+                for link, d in zip(links, datasets):
+                    source[d] = np.random.rand(10)
+                    source[link] = h5py.SoftLink(d)
+
+                g5.copy(source, dest, datasets + links)
+
+                for path in datasets + links:
+                    self.assertTrue(g5.equal(source, dest, path))
+                for path in datasets + links:
+                    self.assertTrue(not isinstance(dest.get(path, getlink=True), h5py.SoftLink))
+
     def test_copy_skip(self):
 
         sourcepath = os.path.join(dirname, "foo_1.h5")
