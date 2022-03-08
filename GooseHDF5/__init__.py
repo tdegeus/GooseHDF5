@@ -253,7 +253,7 @@ def getpaths(data, root="/", max_depth=None, fold=None):
         specifically requested to be folded.
     """
 
-    warnings.warn("getpaths() is deprecated, use getdatasets().", warnings.DeprecationWarning)
+    warnings.warn("getpaths() is deprecated, use getdatasets().", category=DeprecationWarning)
     return getdatasets(data, root, max_depth, fold)
 
 
@@ -662,7 +662,7 @@ def copydatasets(
     :param root: Path prefix for all ``dest_datasets``.
     """
 
-    warnings.warn("copydatasets() is deprecated, use copy().", warnings.DeprecationWarning)
+    warnings.warn("copydatasets() is deprecated, use copy().", category=DeprecationWarning)
 
     return copy(source, dest, source_datasets, dest_datasets, root)
 
