@@ -518,7 +518,7 @@ def _create_groups(file, paths):
             file.create_group(group)
 
 
-def _copy(source, dest, source_paths, dest_paths):
+def _copy(source, dest, source_paths, dest_paths, expand_soft):
     """
     Copy paths recursively.
     """
@@ -533,11 +533,18 @@ def _copy(source, dest, source_paths, dest_paths):
         # (main function checks existence before, so this can be the only reason)
         if dest_path in dest:
             continue
+
+        if not expand_soft:
+            link = source.get(source_path, getlink=True)
+            if isinstance(link, h5py.SoftLink):
+                dest[dest_path] = h5py.SoftLink(link.path)
+                continue
+
         group = posixpath.split(dest_path)[0]
         source.copy(source_path, dest[group], posixpath.split(dest_path)[1])
 
 
-def _copy_attrs(source, dest, source_paths, dest_paths):
+def _copy_attrs(source, dest, source_paths, dest_paths, expand_soft):
 
     if len(source_paths) == 0:
         return 0
@@ -545,6 +552,12 @@ def _copy_attrs(source, dest, source_paths, dest_paths):
     _create_groups(dest, dest_paths)
 
     for source_path, dest_path in zip(source_paths, dest_paths):
+
+        if not expand_soft:
+            link = source.get(source_path, getlink=True)
+            if isinstance(link, h5py.SoftLink):
+                dest[dest_path] = h5py.SoftLink(link.path)
+                continue
 
         source_group = source[source_path]
 
@@ -565,6 +578,7 @@ def copy(
     root: str = None,
     recursive: bool = True,
     skip: bool = False,
+    expand_soft: bool = True,
 ):
     """
     Copy groups/datasets from one HDF5-archive ``source`` to another HDF5-archive ``dest``.
@@ -579,6 +593,7 @@ def copy(
     :param root: Path prefix for all ``dest_datasets``.
     :param recursive: If the source is a group, copy all objects within that group recursively.
     :param skip: Skip datasets that are not present in source.
+    :param expand_soft: Copy the underlying data of a link, or copy as link with the same path.
     """
 
     if len(source_datasets) == 0:
@@ -606,17 +621,22 @@ def copy(
     isgroup = np.array([isinstance(source[path], h5py.Group) for path in source_datasets])
 
     if recursive:
-        _copy(source, dest, source_datasets[isgroup], dest_datasets[isgroup])
+        _copy(
+            source, dest, source_datasets[isgroup], dest_datasets[isgroup], expand_soft=expand_soft
+        )
 
     _copy(
         source,
         dest,
         source_datasets[np.logical_not(isgroup)],
         dest_datasets[np.logical_not(isgroup)],
+        expand_soft=expand_soft,
     )
 
     if not recursive:
-        _copy_attrs(source, dest, source_datasets[isgroup], dest_datasets[isgroup])
+        _copy_attrs(
+            source, dest, source_datasets[isgroup], dest_datasets[isgroup], expand_soft=expand_soft
+        )
 
 
 def copydatasets(
