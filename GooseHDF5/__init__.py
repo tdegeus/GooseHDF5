@@ -726,7 +726,7 @@ def _equal_value(a, b):
         else:
             return False
 
-    return list(a[...]) == list(b[...])
+    return np.all(np.array(list(a[...])) == np.array(list(b[...])))
 
 
 def _equal(a, b, attrs, matching_dtype):
