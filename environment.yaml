@@ -2,9 +2,9 @@ channels:
 - conda-forge
 dependencies:
 - click
+- furo
 - h5py
 - numpy
 - python
 - sphinx
 - sphinx-argparse
-- sphinx_rtd_theme
