@@ -1273,6 +1273,7 @@ def _G5list_parser():
     searching the entire file.
     """
     parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument("--min-attrs", type=int, help="Filter based on min. number of attributes")
     parser.add_argument("-D", "--datasets", action="store_true", help="Print only datasets")
     parser.add_argument("-d", "--max-depth", type=int, help="Maximum depth to display")
     parser.add_argument("-f", "--fold", action="append", help="Fold paths")
@@ -1309,6 +1310,16 @@ def G5list(args: list[str]):
             if not args.datasets:
                 paths += getgroups(source, root=args.root, has_attrs=True, max_depth=args.max_depth)
             paths = sorted(list(set(paths)))
+
+        if args.min_attrs is not None:
+            rm = []
+            for path in paths:
+                if path in source:
+                    source[path]
+                    if len(source[path].attrs) < args.min_attrs:
+                        rm.append(path)
+            for path in rm:
+                paths.remove(path)
 
         if args.info:
             print_info(source, paths)
