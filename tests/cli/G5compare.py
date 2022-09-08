@@ -3,6 +3,7 @@ import subprocess
 
 import h5py
 import numpy as np
+import prettytable
 
 
 def run(cmd):
@@ -78,25 +79,26 @@ with h5py.File("a.hdf5", "w") as source:
         meta.attrs["version"] = 1
 
 
-output = sorted(run("G5compare -c none a.hdf5 b.hdf5 -r /d/equal /e/equal"))
+output = sorted(run("G5compare -c none --table PLAIN_COLUMNS a.hdf5 b.hdf5 -r /d/equal /e/equal"))
+output = [i.strip() for i in output]
 
-expected_output = sorted(
-    [
-        "/a/not_equal != /a/not_equal",
-        "/b/not_equal != /b/not_equal",
-        "/c/not_equal != /c/not_equal",
-        "/f/not_equal != /f/not_equal",
-        "/present     != /present",
-        "/meta        ->",
-    ]
-)
+out = prettytable.PrettyTable()
+out.set_style(prettytable.PLAIN_COLUMNS)
+out.field_names = ["a.hdf5", "", "b.hdf5"]
+out.align = "l"
+out.add_row(["/a/not_equal", "!=", "/a/not_equal"])
+out.add_row(["/b/not_equal", "!=", "/b/not_equal"])
+out.add_row(["/c/not_equal", "!=", "/c/not_equal"])
+out.add_row(["/f/not_equal", "!=", "/f/not_equal"])
+out.add_row(["/present", "!=", "/present"])
+out.add_row(["/meta", "->", ""])
+expected_output = [i.strip() for i in sorted(out.get_string().split("\n"))]
 
 os.remove("a.hdf5")
 os.remove("b.hdf5")
 
-if output != expected_output:
-    print("output = ")
-    print(output)
-    print("expected output = ")
-    print(expected_output)
-    raise OSError("Test failed")
+for i in range(len(output)):
+    if output[i] != expected_output[i]:
+        print("|" + output[i] + "|")
+        print("|" + expected_output[i] + "|")
+        raise OSError("Test failed")
