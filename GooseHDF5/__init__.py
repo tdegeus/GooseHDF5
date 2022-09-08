@@ -1055,9 +1055,17 @@ def print_plain(source, paths: list[str], show_links: bool = False):
         print(path)
 
 
-def print_info(source, paths: list[str], link_type: bool = False):
+def info_table(source, paths: list[str], link_type: bool = False) -> PrettyTable:
     r"""
-    Print the paths to all datasets (one per line), including type information.
+    Get a table with basic information per path:
+
+    - path
+    - size
+    - shape
+    - dtype
+    - attrs: Number of attributes
+    - link: Link type
+
     :param paths: List of paths.
     :param link_type: Include the link-type in the output.
     """
@@ -1068,7 +1076,8 @@ def print_info(source, paths: list[str], link_type: bool = False):
                 return True
         return False
 
-    out = {"path": [], "size": [], "shape": [], "dtype": [], "attrs": []}
+    header = ["path", "size", "shape", "dtype", "attrs"]
+    out = {key: [] for key in header}
 
     for path in paths:
         if path in source:
@@ -1091,31 +1100,14 @@ def print_info(source, paths: list[str], link_type: bool = False):
             out["attrs"] += ["-"]
 
     if link_type:
+        header.append("link")
         out["link"] = [_linktype2str(source, path) for path in paths]
 
-    width = {}
-    for key in out:
-        width[key] = max(len(i) for i in out[key])
-        width[key] = max(width[key], len(key))
+    table = PrettyTable()
+    for key in header:
+        table.add_column(column=out[key], fieldname=key, align="l")
 
-    fmt = "{path:%ds} {size:%ds} {shape:%ds} {dtype:%ds}" % (
-        width["path"],
-        width["size"],
-        width["shape"],
-        width["dtype"],
-    )
-
-    if has_attributes(out["attrs"]):
-        fmt += " {attrs:%ds}" % width["attrs"]
-
-    if "link" in out:
-        fmt += " {link:%ds}" % width["link"]
-
-    print(fmt.format(**{key: key for key in out}))
-    print(fmt.format(**{key: "=" * width[key] for key in out}))
-
-    for i in range(len(out["path"])):
-        print(fmt.format(**{key: out[key][i] for key in out}))
+    return table
 
 
 def print_attribute(source, paths: list[str]):
@@ -1259,7 +1251,8 @@ def _G5list_parser():
     parser.add_argument("-L", "--layer", type=str, help="Print paths at a specific layer")
     parser.add_argument("-l", "--long", action="store_true", help="--info but with attributes")
     parser.add_argument("-r", "--root", default="/", help="Start somewhere in the path-tree")
-    parser.add_argument("-s", "--links", action="store_true", help="Show destination of soft links")
+    parser.add_argument("--links", action="store_true", help="Show destination of soft links")
+    parser.add_argument("-s", "--sort", type=str, default="path", help="Sort by some column")
     parser.add_argument("-v", "--version", action="version", version=version)
     parser.add_argument("source")
     return parser
@@ -1300,7 +1293,9 @@ def G5list(args: list[str]):
                 paths.remove(path)
 
         if args.info:
-            print_info(source, paths, link_type=args.link_type)
+            table = info_table(source, paths, link_type=args.link_type)
+            table.set_style(SINGLE_BORDER)
+            print(table.get_string(sortby=args.sort))
         elif args.long:
             print_attribute(source, paths)
         else:
@@ -1449,11 +1444,12 @@ def _G5print_catch():
 
 
 def _G5list_catch():
-    try:
-        G5list(sys.argv[1:])
-    except Exception as e:
-        print(e)
-        return 1
+    G5list(sys.argv[1:])
+    # try:
+    #     G5list(sys.argv[1:])
+    # except Exception as e:
+    #     print(e)
+    #     return 1
 
 
 def _G5compare_catch():
