@@ -44,129 +44,15 @@ import os
 import warnings
 
 import h5py
+import numpy as np
+from prettytable import PLAIN_COLUMNS
+from prettytable import PrettyTable
+from termcolor import colored
 
 from .. import compare_rename
 from .. import version
 
 warnings.filterwarnings("ignore")
-
-
-def theme(theme=None):
-    r"""
-    Return dictionary of colors.
-
-    .. code-block:: python
-
-        {
-            'new' : '...',
-            'overwrite' : '...',
-            'skip' : '...',
-            'bright' : '...',
-        }
-
-    :param str theme: Select color-theme.
-
-    :rtype: dict
-    """
-
-    if theme == "dark":
-        return {
-            "->": "9;31",
-            "<-": "1;32",
-            "!=": "1;31",
-        }
-
-    return {
-        "->": "",
-        "<-": "",
-        "!=": "",
-    }
-
-
-class String:
-    r"""
-    Rich string.
-
-    .. note::
-
-        All options are attributes, that can be modified at all times.
-
-    .. note::
-
-        Available methods:
-
-        *   ``A.format()`` :  Formatted string.
-        *   ``str(A)`` : Unformatted string.
-        *   ``A.isnumeric()`` : Return if the "data" is numeric.
-        *   ``int(A)`` : Dummy integer.
-        *   ``float(A)`` : Dummy float.
-
-    :type data: str, None
-    :param data: The data.
-
-    :type width: None, int
-    :param width: Print width (formatted print only).
-
-    :type color: None, str
-    :param color: Print color, e.g. "1;32" for bold green (formatted print only).
-
-    :type align: ``'<'``, ``'>'``
-    :param align: Print alignment (formatted print only).
-
-    :type dummy: 0, int, float
-    :param dummy: Dummy numerical value.
-
-    :methods:
-
-
-    """
-
-    def __init__(self, data, width=None, align="<", color=None, dummy=0):
-
-        self.data = data
-        self.width = width
-        self.color = color
-        self.align = align
-        self.dummy = dummy
-
-    def format(self):
-        r"""
-        Return formatted string: align/width/color are applied.
-        """
-
-        if self.width and self.color:
-            fmt = "\x1b[{color:s}m{{0:{align:s}{width:d}.{width:d}s}}\x1b[0m".format(
-                **self.__dict__
-            )
-        elif self.width:
-            fmt = "{{0:{align:s}{width:d}.{width:d}s}}".format(**self.__dict__)
-        elif self.color:
-            fmt = "\x1b[{color:s}m{{0:{align:s}s}}\x1b[0m".format(**self.__dict__)
-        else:
-            fmt = "{{0:{align:s}s}}".format(**self.__dict__)
-
-        return fmt.format(str(self))
-
-    def isnumeric(self):
-        r"""
-        Return if the "data" is numeric : always zero for this class.
-        """
-        return False
-
-    def __str__(self):
-        return str(self.data)
-
-    def __int__(self):
-        return int(self.dummy)
-
-    def __float__(self):
-        return float(self.dummy)
-
-    def __repr__(self):
-        return str(self)
-
-    def __lt__(self, other):
-        return str(self) < str(other)
 
 
 def main():
@@ -184,8 +70,6 @@ def main():
     parser.add_argument("b")
     args = parser.parse_args()
 
-    color = theme(args.color)
-
     for filepath in [args.a, args.b]:
         if not os.path.isfile(filepath):
             raise OSError(f'"{filepath}" does not exist')
@@ -195,37 +79,68 @@ def main():
             a, b, rename=args.renamed, matching_dtype=args.dtype, shallow=args.shallow
         )
 
+    def print_path(path):
+        if len(os.path.relpath(path).split("..")) < 3:
+            return os.path.relpath(path)
+        return os.path.abspath(path)
+
+    def truncate_path(path, n):
+
+        if len(path) <= n:
+            return path
+
+        path = os.path.abspath(path)
+        path = path.split(os.sep)
+        if len(path[0]) == 0:
+            path[0] = os.sep
+        l = np.array([len(i) for i in path])
+        s = np.zeros(len(path), dtype=bool)
+        s[0] = True
+        s[-1] = True
+
+        for i in range(1, len(path) - 1)[::-1]:
+            s[i] = True
+            if np.sum(l[s]) + np.sum(s) + 3 >= n:
+                s[i] = False
+                break
+
+        if np.sum(s) != len(path):
+            path = [path[0], "..."] + np.array(path)[s][1:].tolist()
+
+        return os.path.join(*path)
+
+    def def_row(arg):
+        if arg[1] == "!=":
+            return [
+                colored(arg[0], "cyan", attrs=["bold"]),
+                arg[1],
+                colored(arg[2], "cyan", attrs=["bold"]),
+            ]
+        if arg[1] == "->":
+            return [colored(arg[0], "red", attrs=["bold", "concealed"]), arg[1], ""]
+        if arg[1] == "<-":
+            return ["", arg[1], colored(arg[2], "green", attrs=["bold"])]
+
+    out = PrettyTable()
+    out.set_style(PLAIN_COLUMNS)
+    out.align = "l"
     n = 0
+
     for key in comp:
         if key != "==":
             for item in comp[key]:
+                out.add_row(def_row([item, key, item]))
                 n = max(n, len(item))
 
-    for item in r_a["=="]:
-        n = max(n, len(item))
-
-    paths = []
-    for key in comp:
-        if key != "==":
-            for item in comp[key]:
-                paths += [(item, item, key)]
-
     for path_a, path_b in zip(r_a["!="], r_b["!="]):
-        paths += [(path_a, path_b, "!=")]
+        out.add_row(def_row([path_a, "!=", path_b]))
+        n = max(n, len(path_a))
 
-    paths = sorted(paths, key=lambda v: v[0])
+    file_a = print_path(args.a)
+    file_b = print_path(args.b)
+    out.field_names = [truncate_path(file_a, n), "", truncate_path(file_b, n)]
 
-    for path_a, path_b, key in paths:
-        if key == "<-":
-            print(" " * n + " <- " + String(path_b, color=color["<-"]).format())
-        elif key == "->":
-            print(String(path_a, color=color["->"], width=n).format() + " -> ")
-        else:
-            print(
-                String(path_a, color=color["!="], width=n).format()
-                + " != "
-                + String(path_b, color=color["!="], width=n).format()
-            )
+    print(out.get_string())
 
 
 if __name__ == "__main__":
