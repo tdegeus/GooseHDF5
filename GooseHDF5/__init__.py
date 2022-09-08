@@ -7,7 +7,6 @@ import re
 import sys
 import warnings
 from functools import singledispatch
-from typing import Union
 
 import h5py
 import numpy as np
@@ -861,8 +860,8 @@ def _compare_paths(
 
 @singledispatch
 def compare(
-    a: Union[str, h5py.File],
-    b: Union[str, h5py.File],
+    a: str | h5py.File,
+    b: str | h5py.File,
     paths_a: list[str] = None,
     paths_b: list[str] = None,
     attrs: bool = True,
