@@ -13,8 +13,8 @@ from typing import Iterator
 
 import h5py
 import numpy as np
-from prettytable import PLAIN_COLUMNS
 from prettytable import PrettyTable
+from prettytable import SINGLE_BORDER
 from termcolor import colored
 
 from ._version import version  # noqa: F401
@@ -1339,6 +1339,52 @@ def _G5compare_parser():
     return parser
 
 
+def _truncate_print_path(path: str, n: int) -> str:
+    """
+    Truncate a file path, such that the printed length is smaller than ``n``.
+    For example::
+
+        "/path/to/long/foo/bar" -> "/path/.../bar"
+
+    :param path: Path to truncate.
+    :param n: Maximum length of the path.
+    :return: Truncated path.
+    """
+
+    if len(path) <= n:
+        return path
+
+    path = os.path.abspath(path).split(os.sep)
+    if len(path[0]) == 0:
+        path[0] = os.sep
+
+    length = np.array([len(i) for i in path])
+    incl = np.zeros(len(path), dtype=bool)
+    incl[0] = True
+    incl[-1] = True
+
+    # try including from the back
+    for i in range(1, len(path) - 1)[::-1]:
+        incl[i] = True
+        if np.sum(length[incl]) + np.sum(incl) + 3 > n:
+            incl[i] = False
+            break
+
+    # try including from the front
+    for i in range(1, len(path) - 1):
+        incl[i] = True
+        if np.sum(length[incl]) + np.sum(incl) + 3 > n:
+            incl[i] = False
+            break
+
+    if np.sum(incl) != len(path):
+        i = np.argmin(incl)
+        j = i + np.argmax(incl[i:])
+        path = path[:i] + ["..."] + path[j:]
+
+    return os.path.join(*path)
+
+
 def G5compare(args: list[str]):
     """
     Command-line tool to print datasets from a file, see ``--help``.
@@ -1362,31 +1408,6 @@ def G5compare(args: list[str]):
             return os.path.relpath(path)
         return os.path.abspath(path)
 
-    def truncate_path(path, n):
-
-        if len(path) <= n:
-            return path
-
-        path = os.path.abspath(path)
-        path = path.split(os.sep)
-        if len(path[0]) == 0:
-            path[0] = os.sep
-        length = np.array([len(i) for i in path])
-        incl = np.zeros(len(path), dtype=bool)
-        incl[0] = True
-        incl[-1] = True
-
-        for i in range(1, len(path) - 1)[::-1]:
-            incl[i] = True
-            if np.sum(length[incl]) + np.sum(incl) + 3 >= n:
-                incl[i] = False
-                break
-
-        if np.sum(incl) != len(path):
-            path = [path[0], "..."] + np.array(path)[incl][1:].tolist()
-
-        return os.path.join(*path)
-
     def def_row(arg):
         if arg[1] == "!=":
             return [
@@ -1400,23 +1421,21 @@ def G5compare(args: list[str]):
             return ["", arg[1], colored(arg[2], "green", attrs=["bold"])]
 
     out = PrettyTable()
-    out.set_style(PLAIN_COLUMNS)
+    out.set_style(SINGLE_BORDER)
     out.align = "l"
-    n = 0
 
     for key in comp:
         if key != "==":
             for item in comp[key]:
                 out.add_row(def_row([item, key, item]))
-                n = max(n, len(item))
 
     for path_a, path_b in zip(r_a["!="], r_b["!="]):
         out.add_row(def_row([path_a, "!=", path_b]))
-        n = max(n, len(path_a))
 
     file_a = print_path(args.a)
     file_b = print_path(args.b)
-    out.field_names = [truncate_path(file_a, n), "", truncate_path(file_b, n)]
+    n = max(len(row[0]) for row in out.rows)
+    out.field_names = [_truncate_print_path(file_a, n), "", _truncate_print_path(file_b, n)]
 
     print(out.get_string())
 
