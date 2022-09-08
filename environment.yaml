@@ -5,6 +5,8 @@ dependencies:
 - furo
 - h5py
 - numpy
+- prettytable
 - python
 - sphinx
 - sphinx-argparse
+- termcolor
