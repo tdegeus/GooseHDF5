@@ -256,6 +256,13 @@ class Test_itereator(unittest.TestCase):
 
         shutil.rmtree(dirname)
 
+    def test_truncate_print_path(self):
+
+        path = os.path.join("path", "to", "long", "foo", "bar")
+
+        for n in [9, 10, 20, 30]:
+            self.assertLessEqual(len(g5._truncate_print_path(path, n)), n)
+
 
 if __name__ == "__main__":
 
