@@ -21,15 +21,13 @@ G5list
     :func: _G5list_parser
     :prog: G5list
 
-Overview
---------
+G5compare
+---------
 
-.. autosummary::
-
-    GooseHDF5.cli.G5check
-    GooseHDF5.cli.G5repair
-    GooseHDF5.cli.G5compare
-    GooseHDF5.cli.G5repack
+.. argparse::
+    :module: GooseHDF5
+    :func: _G5compare_parser
+    :prog: G5compare
 
 G5check
 -------
@@ -40,11 +38,6 @@ G5repair
 --------
 
 .. automodule:: GooseHDF5.cli.G5repair
-
-G5compare
----------
-
-.. automodule:: GooseHDF5.cli.G5compare
 
 G5repack
 --------
