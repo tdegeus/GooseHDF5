@@ -204,58 +204,6 @@ def getdatasets(file, root="/", max_depth=None, fold=None):
     return _getpaths(file, root)
 
 
-def getpaths(data, root="/", max_depth=None, fold=None):
-    r"""
-    Iterator to transverse all datasets in HDF5-archive.
-    One can choose to fold (not transverse deeper than):
-
-    -   Groups deeper than a certain ``max_depth``.
-    -   A (list of) specific group(s).
-
-    :param h5py.File data: A HDF5-archive.
-    :param str root: Start a certain point along the path-tree.
-    :param int max_depth: Set a maximum depth beyond which groups are folded.
-    :param list fold: Specify groups that are folded.
-    :return: Iterator.
-
-    :example:
-
-        Consider this file:
-
-        .. code-block:: bash
-
-            /path/to/first/a
-            /path/to/first/b
-            /data/c
-            /data/d
-            /e
-
-        Calling:
-
-        .. code-block:: python
-
-            with h5py.File('...', 'r') as data:
-
-                for path in GooseHDF5.getpaths(data, max_depth=2, fold='/data'):
-                    print(path)
-
-        Will print:
-
-        .. code-block:: bash
-
-            /path/to/...
-            /data/...
-            /e
-
-        The ``...`` indicate that it concerns a folded group, not a dataset.
-        Here, the first group was folded because of the maximum depth, and the second because it was
-        specifically requested to be folded.
-    """
-
-    warnings.warn("getpaths() is deprecated, use getdatasets().", category=DeprecationWarning)
-    return getdatasets(data, root, max_depth, fold)
-
-
 def _getpaths(file, root):
     r"""
     Specialization for :py:func:`getpaths`.
