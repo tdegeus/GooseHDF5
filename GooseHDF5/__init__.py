@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import functools
 import operator
@@ -7,6 +9,7 @@ import re
 import sys
 import warnings
 from functools import singledispatch
+from typing import Iterator
 
 import h5py
 import numpy as np
@@ -70,8 +73,8 @@ def dump(file: h5py.File, data: dict, root: str = "/"):
         file[join(root, path)] = _dict_get(data, path)
 
 
-def abspath(path):
-    r"""
+def abspath(path: str) -> str:
+    """
     Return absolute path.
 
     :param str path: A HDF5-path.
@@ -80,11 +83,12 @@ def abspath(path):
     return posixpath.normpath(posixpath.join("/", path))
 
 
-def join(*args, root=False):
-    r"""
+def join(*args, root: bool = False) -> str:
+    """
     Join path components.
 
     :param list args: Piece of a path.
+    :param root: Prepend the output with the root ``"/"``.
     :return: The concatenated path.
     """
 
@@ -102,13 +106,16 @@ def join(*args, root=False):
     return posixpath.join(*lst)
 
 
-def getdatapaths(file, root: str = "/"):
+def getdatapaths(file, root: str = "/") -> list[str]:
     """
-    Get paths to all datasets and groups that contain attributes.
+    Get paths to all:
+
+    -   Datasets, and
+    -   Groups that contain attributes.
 
     :param file: A HDF5-archive.
     :param root: Start at a certain point along the path-tree.
-    :return: ``list[str]``.
+    :return: List of paths.
     """
     return list(getdatasets(file, root=root)) + list(getgroups(file, root=root, has_attrs=True))
 
@@ -123,7 +130,7 @@ def getgroups(
     :param root: Start at a certain point along the path-tree.
     :param has_attrs: Return only groups that have attributes.
     :param int max_depth: Set a maximum depth beyond which groups are folded.
-    :return: ``list[str]``.
+    :return: List of paths.
     """
 
     keys = []
@@ -144,7 +151,9 @@ def getgroups(
     return keys
 
 
-def getdatasets(file, root="/", max_depth=None, fold=None):
+def getdatasets(
+    file: h5py.File, root: str = "/", max_depth: int = None, fold: str | list[str] = None
+) -> Iterator:
     r"""
     Iterator to transverse all datasets in a HDF5-archive.
     One can choose to fold (not transverse deeper than):
@@ -152,11 +161,11 @@ def getdatasets(file, root="/", max_depth=None, fold=None):
     -   Groups deeper than a certain ``max_depth``.
     -   A (list of) specific group(s).
 
-    :param h5py.File file: A HDF5-archive.
-    :param str root: Start a certain point along the path-tree.
-    :param int max_depth: Set a maximum depth beyond which groups are folded.
-    :param list fold: Specify groups that are folded.
-    :return: Iterator.
+    :param file: A HDF5-archive.
+    :param root: Start a certain point along the path-tree.
+    :param max_depth: Set a maximum depth beyond which groups are folded.
+    :param fold: Specify groups that are folded.
+    :return: Iterator to paths.
 
     :example:
 
