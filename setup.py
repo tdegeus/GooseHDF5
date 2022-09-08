@@ -19,7 +19,7 @@ setup(
     entry_points={
         "console_scripts": [
             f"G5check = {project_name}.cli.G5check:main",
-            f"G5compare = {project_name}.cli.G5compare:main",
+            f"G5compare = {project_name}:_G5compare_catch",
             f"G5list = {project_name}:_G5list_catch",
             f"G5print = {project_name}:_G5print_catch",
             f"G5repack = {project_name}.cli.G5repack:main",

@@ -13,6 +13,9 @@ from typing import Iterator
 
 import h5py
 import numpy as np
+from prettytable import PLAIN_COLUMNS
+from prettytable import PrettyTable
+from termcolor import colored
 
 from ._version import version  # noqa: F401
 from ._version import version_tuple  # noqa: F401
@@ -1237,14 +1240,6 @@ def G5print(args: list[str]):
                 print("")
 
 
-def _G5print_catch():
-    try:
-        G5print(sys.argv[1:])
-    except Exception as e:
-        print(e)
-        return 1
-
-
 def _G5list_parser():
     """
     Return parser for :py:func:`G5list`.
@@ -1312,9 +1307,139 @@ def G5list(args: list[str]):
             print_plain(source, paths, show_links=args.links)
 
 
+def _G5compare_parser():
+    """
+    Return parser for :py:func:`G5compare`.
+    """
+
+    desc = """Compare two HDF5 files.
+    If the function does not output anything all datasets are present in both files,
+    and all the content of the datasets is equal.
+    Each output line corresponds to a mismatch between the files.
+
+    Deal with renamed paths::
+
+        G5compare a.h5 b.h5 -r "/a" "/b"  -r "/c" "/d"
+    """
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument(
+        "-t", "--dtype", action="store_true", help="Verify that the type of the datasets match."
+    )
+    parser.add_argument(
+        "--shallow",
+        action="store_true",
+        help="Only check for the presence of datasets and attributes. Do not check their values.",
+    )
+    parser.add_argument(
+        "-r", "--renamed", nargs=2, action="append", help="Renamed paths (one per file)."
+    )
+    parser.add_argument("-v", "--version", action="version", version=version)
+    parser.add_argument("a", help="Path to HDF5-file.")
+    parser.add_argument("b", help="Path to HDF5-file.")
+    return parser
+
+
+def G5compare(args: list[str]):
+    """
+    Command-line tool to print datasets from a file, see ``--help``.
+    :param args: Command-line arguments (should be all strings).
+    """
+
+    parser = _G5compare_parser()
+    args = parser.parse_args(args)
+
+    for filepath in [args.a, args.b]:
+        if not os.path.isfile(filepath):
+            raise OSError(f'"{filepath}" does not exist')
+
+    with h5py.File(args.a, "r") as a, h5py.File(args.b, "r") as b:
+        comp, r_a, r_b = compare_rename(
+            a, b, rename=args.renamed, matching_dtype=args.dtype, shallow=args.shallow
+        )
+
+    def print_path(path):
+        if len(os.path.relpath(path).split("..")) < 3:
+            return os.path.relpath(path)
+        return os.path.abspath(path)
+
+    def truncate_path(path, n):
+
+        if len(path) <= n:
+            return path
+
+        path = os.path.abspath(path)
+        path = path.split(os.sep)
+        if len(path[0]) == 0:
+            path[0] = os.sep
+        length = np.array([len(i) for i in path])
+        incl = np.zeros(len(path), dtype=bool)
+        incl[0] = True
+        incl[-1] = True
+
+        for i in range(1, len(path) - 1)[::-1]:
+            incl[i] = True
+            if np.sum(length[incl]) + np.sum(incl) + 3 >= n:
+                incl[i] = False
+                break
+
+        if np.sum(incl) != len(path):
+            path = [path[0], "..."] + np.array(path)[incl][1:].tolist()
+
+        return os.path.join(*path)
+
+    def def_row(arg):
+        if arg[1] == "!=":
+            return [
+                colored(arg[0], "cyan", attrs=["bold"]),
+                arg[1],
+                colored(arg[2], "cyan", attrs=["bold"]),
+            ]
+        if arg[1] == "->":
+            return [colored(arg[0], "red", attrs=["bold", "concealed"]), arg[1], ""]
+        if arg[1] == "<-":
+            return ["", arg[1], colored(arg[2], "green", attrs=["bold"])]
+
+    out = PrettyTable()
+    out.set_style(PLAIN_COLUMNS)
+    out.align = "l"
+    n = 0
+
+    for key in comp:
+        if key != "==":
+            for item in comp[key]:
+                out.add_row(def_row([item, key, item]))
+                n = max(n, len(item))
+
+    for path_a, path_b in zip(r_a["!="], r_b["!="]):
+        out.add_row(def_row([path_a, "!=", path_b]))
+        n = max(n, len(path_a))
+
+    file_a = print_path(args.a)
+    file_b = print_path(args.b)
+    out.field_names = [truncate_path(file_a, n), "", truncate_path(file_b, n)]
+
+    print(out.get_string())
+
+
+def _G5print_catch():
+    try:
+        G5print(sys.argv[1:])
+    except Exception as e:
+        print(e)
+        return 1
+
+
 def _G5list_catch():
     try:
         G5list(sys.argv[1:])
+    except Exception as e:
+        print(e)
+        return 1
+
+
+def _G5compare_catch():
+    try:
+        G5compare(sys.argv[1:])
     except Exception as e:
         print(e)
         return 1
