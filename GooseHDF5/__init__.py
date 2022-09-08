@@ -1328,6 +1328,7 @@ def _G5compare_parser():
     parser.add_argument(
         "-r", "--renamed", nargs=2, action="append", help="Renamed paths (one per file)."
     )
+    parser.add_argument("-c", "--theme", default="dark", help="Color theme: dark/light/none")
     parser.add_argument("-v", "--version", action="version", version=version)
     parser.add_argument("a", help="Path to HDF5-file.")
     parser.add_argument("b", help="Path to HDF5-file.")
@@ -1403,7 +1404,9 @@ def G5compare(args: list[str]):
             return os.path.relpath(path)
         return os.path.abspath(path)
 
-    def def_row(arg):
+    def def_row(arg, theme):
+        if theme == "none":
+            return arg
         if arg[1] == "!=":
             return [
                 colored(arg[0], "cyan", attrs=["bold"]),
@@ -1422,10 +1425,10 @@ def G5compare(args: list[str]):
     for key in comp:
         if key != "==":
             for item in comp[key]:
-                out.add_row(def_row([item, key, item]))
+                out.add_row(def_row([item, key, item], args.theme))
 
     for path_a, path_b in zip(r_a["!="], r_b["!="]):
-        out.add_row(def_row([path_a, "!=", path_b]))
+        out.add_row(def_row([path_a, "!=", path_b], args.theme))
 
     file_a = print_path(args.a)
     file_b = print_path(args.b)
