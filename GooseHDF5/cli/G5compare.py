@@ -20,6 +20,9 @@
     -t, --dtype
         Verify that the type of the datasets match.
 
+    --shallow
+        Only check for the presence of datasets and attributes. Do not check their values.
+
     -r, --renamed=ARG
         Renamed paths: this option takes two arguments, one for ``source`` and one for ``other``.
         It can repeated, e.g. ``G5compare a.h5 b.h5 -r /a /b  -r /c /d``
@@ -174,6 +177,7 @@ def main():
     parser = Parser()
     parser.add_argument("-c", "--color", type=str, default="dark")
     parser.add_argument("-t", "--dtype", required=False, action="store_true")
+    parser.add_argument("--shallow", action="store_true")
     parser.add_argument("-r", "--renamed", required=False, nargs=2, action="append")
     parser.add_argument("-v", "--version", action="version", version=version)
     parser.add_argument("a")
@@ -187,7 +191,9 @@ def main():
             raise OSError(f'"{filepath}" does not exist')
 
     with h5py.File(args.a, "r") as a, h5py.File(args.b, "r") as b:
-        comp, r_a, r_b = compare_rename(a, b, rename=args.renamed, matching_dtype=args.dtype)
+        comp, r_a, r_b = compare_rename(
+            a, b, rename=args.renamed, matching_dtype=args.dtype, shallow=args.shallow
+        )
 
     n = 0
     for key in comp:
