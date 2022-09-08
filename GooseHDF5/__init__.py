@@ -13,8 +13,7 @@ from typing import Iterator
 
 import h5py
 import numpy as np
-from prettytable import PrettyTable
-from prettytable import SINGLE_BORDER
+import prettytable
 from termcolor import colored
 
 from ._version import version  # noqa: F401
@@ -1055,7 +1054,7 @@ def print_plain(source, paths: list[str], show_links: bool = False):
         print(path)
 
 
-def info_table(source, paths: list[str], link_type: bool = False) -> PrettyTable:
+def info_table(source, paths: list[str], link_type: bool = False) -> prettytable.PrettyTable:
     r"""
     Get a table with basic information per path:
 
@@ -1103,7 +1102,7 @@ def info_table(source, paths: list[str], link_type: bool = False) -> PrettyTable
         header.append("link")
         out["link"] = [_linktype2str(source, path) for path in paths]
 
-    table = PrettyTable()
+    table = prettytable.PrettyTable()
     for key in header:
         table.add_column(column=out[key], fieldname=key, align="l")
 
@@ -1294,7 +1293,7 @@ def G5list(args: list[str]):
 
         if args.info:
             table = info_table(source, paths, link_type=args.link_type)
-            table.set_style(SINGLE_BORDER)
+            table.set_style(prettytable.SINGLE_BORDER)
             print(table.get_string(sortby=args.sort))
         elif args.long:
             print_attribute(source, paths)
@@ -1328,7 +1327,8 @@ def _G5compare_parser():
     parser.add_argument(
         "-r", "--renamed", nargs=2, action="append", help="Renamed paths (one per file)."
     )
-    parser.add_argument("-c", "--theme", default="dark", help="Color theme: dark/light/none")
+    parser.add_argument("-c", "--colors", default="dark", help="Color theme: dark/light/none")
+    parser.add_argument("--table", default="SINGLE_BORDER", help="Table theme")
     parser.add_argument("-v", "--version", action="version", version=version)
     parser.add_argument("a", help="Path to HDF5-file.")
     parser.add_argument("b", help="Path to HDF5-file.")
@@ -1404,9 +1404,16 @@ def G5compare(args: list[str]):
             return os.path.relpath(path)
         return os.path.abspath(path)
 
-    def def_row(arg, theme):
-        if theme == "none":
-            return arg
+    def def_row(arg, colors):
+
+        if colors == "none":
+            if arg[1] == "!=":
+                return arg
+            if arg[1] == "->":
+                return [arg[0], arg[1], ""]
+            if arg[1] == "<":
+                return ["", arg[1], arg[2]]
+
         if arg[1] == "!=":
             return [
                 colored(arg[0], "cyan", attrs=["bold"]),
@@ -1418,17 +1425,20 @@ def G5compare(args: list[str]):
         if arg[1] == "<-":
             return ["", arg[1], colored(arg[2], "green", attrs=["bold"])]
 
-    out = PrettyTable()
-    out.set_style(SINGLE_BORDER)
+    out = prettytable.PrettyTable()
+    if args.table == "PLAIN_COLUMNS":
+        out.set_style(prettytable.PLAIN_COLUMNS)
+    elif args.table == "SINGLE_BORDER":
+        out.set_style(prettytable.SINGLE_BORDER)
     out.align = "l"
 
     for key in comp:
         if key != "==":
             for item in comp[key]:
-                out.add_row(def_row([item, key, item], args.theme))
+                out.add_row(def_row([item, key, item], args.colors))
 
     for path_a, path_b in zip(r_a["!="], r_b["!="]):
-        out.add_row(def_row([path_a, "!=", path_b], args.theme))
+        out.add_row(def_row([path_a, "!=", path_b], args.colors))
 
     file_a = print_path(args.a)
     file_b = print_path(args.b)
