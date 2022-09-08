@@ -685,18 +685,20 @@ def _equal_value(a, b):
     return np.all(np.array(list(a[...])) == np.array(list(b[...])))
 
 
-def _equal(a, b, attrs, matching_dtype):
+def _equal(a, b, attrs, matching_dtype, shallow):
 
     if attrs:
 
         for key in a.attrs:
             if key not in b.attrs:
                 return False
-            if not _equal_value(a.attrs[key], b.attrs[key]):
-                return False
             if matching_dtype:
                 if a.attrs[key].dtype != b.attrs[key].dtype:
                     return False
+            if shallow:
+                return True
+            if not _equal_value(a.attrs[key], b.attrs[key]):
+                return False
 
         for key in b.attrs:
             if key not in a.attrs:
@@ -712,6 +714,9 @@ def _equal(a, b, attrs, matching_dtype):
         if a.dtype != b.dtype:
             return False
 
+    if shallow:
+        return True
+
     return _equal_value(a, b)
 
 
@@ -723,6 +728,7 @@ def equal(
     root: str = None,
     attrs: bool = True,
     matching_dtype: bool = False,
+    shallow: bool = False,
 ):
     r"""
     Check that a dataset is equal in both files.
@@ -734,6 +740,7 @@ def equal(
     :param root: Path prefix for ``dest_dataset``.
     :param attrs: Compare attributes (the same way at datasets).
     :param matching_dtype: Check that not only the data but also the type matches.
+    :param shallow: Check only the presence of the dataset, not its value.
     """
 
     if not dest_dataset:
@@ -748,7 +755,7 @@ def equal(
     if dest_dataset not in dest:
         raise OSError(f'"{dest_dataset:s} not in {dest.filename:s}')
 
-    return _equal(source[source_dataset], dest[dest_dataset], attrs, matching_dtype)
+    return _equal(source[source_dataset], dest[dest_dataset], attrs, matching_dtype, shallow)
 
 
 def allequal(
@@ -759,6 +766,7 @@ def allequal(
     root: str = None,
     attrs: bool = True,
     matching_dtype: bool = False,
+    shallow: bool = False,
 ):
     r"""
     Check that all listed datasets are equal in both files.
@@ -770,6 +778,7 @@ def allequal(
     :param root: Path prefix for all ``dest_datasets``.
     :param attrs: Compare attributes (the same way at datasets).
     :param matching_dtype: Check that not only the data but also the type matches.
+    :param shallow: Check only the presence of the dataset, not its value.
     """
 
     if not dest_datasets:
@@ -784,6 +793,7 @@ def allequal(
             root=root,
             attrs=attrs,
             matching_dtype=matching_dtype,
+            shallow=shallow,
         ):
             return False
 
@@ -823,7 +833,8 @@ def compare(
     paths_b: list[str] = None,
     attrs: bool = True,
     matching_dtype: bool = False,
-):
+    shallow: bool = False,
+) -> dict[list]:
     """
     Compare two files.
     Return dictionary with differences::
@@ -841,6 +852,7 @@ def compare(
     :param paths_b: Paths from ``b`` to consider. Default: read from :py:func:`getdatapaths`.
     :param attrs: Compare attributes (the same way at datasets).
     :param matching_dtype: Check that not only the data but also the type matches.
+    :param shallow: Check only the presence of datasets, not their values, size, or attributes.
     :return: Dictionary with difference.
     """
     raise NotImplementedError("Overload not found.")
@@ -854,7 +866,8 @@ def _(
     paths_b: list[str] = None,
     attrs: bool = True,
     matching_dtype: bool = False,
-):
+    shallow: bool = False,
+) -> dict[list]:
 
     ret = {"<-": [], "->": [], "!=": [], "==": []}
     paths_a, paths_b = _compare_paths(a, b, paths_a, paths_b, attrs)
@@ -870,7 +883,7 @@ def _(
         ret["->"].append(path)
 
     for path in inboth:
-        if not equal(a, b, path, attrs=attrs, matching_dtype=matching_dtype):
+        if not equal(a, b, path, attrs=attrs, matching_dtype=matching_dtype, shallow=shallow):
             ret["!="].append(path)
         else:
             ret["=="].append(path)
@@ -886,10 +899,11 @@ def _(
     paths_b: list[str] = None,
     attrs: bool = True,
     matching_dtype: bool = False,
-):
+    shallow: bool = False,
+) -> dict[list]:
 
     with h5py.File(a, "r") as a_file, h5py.File(b, "r") as b_file:
-        return compare(a_file, b_file, paths_a, paths_a, attrs, matching_dtype)
+        return compare(a_file, b_file, paths_a, paths_a, attrs, matching_dtype, shallow)
 
 
 def compare_rename(
@@ -900,7 +914,8 @@ def compare_rename(
     paths_b: list[str] = None,
     attrs: bool = True,
     matching_dtype: bool = False,
-):
+    shallow: bool = False,
+) -> dict[list]:
     """
     Compare two files.
     Return three dictionaries with differences::
@@ -935,11 +950,15 @@ def compare_rename(
     :param paths_b: Paths from ``b`` to consider. Default: read from :py:func:`getdatapaths`.
     :param attrs: Compare attributes (the same way at datasets).
     :param matching_dtype: Check that not only the data but also the type matches.
+    :param shallow: Check only the presence of datasets, not their values, size, or attributes.
+    :return: Dictionary with difference.
     """
+
+    opts = dict(attrs=attrs, matching_dtype=matching_dtype, shallow=shallow)
 
     if rename is None:
         empty = {"!=": [], "==": []}
-        return compare(a, b, paths_a, paths_b, attrs, matching_dtype), empty, empty
+        return compare(a, b, paths_a, paths_b, **opts), empty, empty
 
     paths_a, paths_b = _compare_paths(a, b, paths_a, paths_b, attrs)
 
@@ -949,12 +968,12 @@ def compare_rename(
         paths_a.remove(path_a)
         paths_b.remove(path_b)
 
-    ret = compare(a, b, paths_a, paths_b, attrs, matching_dtype)
+    ret = compare(a, b, paths_a, paths_b, **opts)
     ret_a = {"!=": [], "==": []}
     ret_b = {"!=": [], "==": []}
 
     for path_a, path_b in rename:
-        if not equal(a, b, path_a, path_b, attrs=attrs, matching_dtype=matching_dtype):
+        if not equal(a, b, path_a, path_b, **opts):
             ret_a["!="].append(path_a)
             ret_b["!="].append(path_b)
         else:
