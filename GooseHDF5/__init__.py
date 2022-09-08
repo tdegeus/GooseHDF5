@@ -998,6 +998,22 @@ def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
             dest[path].attrs[key] = source[path].attrs[key]
 
 
+def _linktype2str(source: h5py.File | h5py.Group, path: str) -> str:
+
+    dset = source.get(path, getlink=True)
+
+    if isinstance(dset, h5py.SoftLink):
+        return "soft"
+
+    if isinstance(dset, h5py.HardLink):
+        return "hard"
+
+    if isinstance(dset, h5py.ExternalLink):
+        return "external"
+
+    return "??"
+
+
 def print_plain(source, paths: list[str], show_links: bool = False):
     r"""
     Print the paths to all datasets (one per line).
@@ -1017,10 +1033,11 @@ def print_plain(source, paths: list[str], show_links: bool = False):
         print(path)
 
 
-def print_info(source, paths: list[str]):
+def print_info(source, paths: list[str], link_type: bool = False):
     r"""
     Print the paths to all datasets (one per line), including type information.
     :param paths: List of paths.
+    :param link_type: Include the link-type in the output.
     """
 
     def has_attributes(lst):
@@ -1051,12 +1068,15 @@ def print_info(source, paths: list[str]):
             out["dtype"] += ["-"]
             out["attrs"] += ["-"]
 
+    if link_type:
+        out["link"] = [_linktype2str(source, path) for path in paths]
+
     width = {}
     for key in out:
         width[key] = max(len(i) for i in out[key])
         width[key] = max(width[key], len(key))
 
-    fmt = "{0:%ds} {1:%ds} {2:%ds} {3:%ds}" % (
+    fmt = "{path:%ds} {size:%ds} {shape:%ds} {dtype:%ds}" % (
         width["path"],
         width["size"],
         width["shape"],
@@ -1064,29 +1084,16 @@ def print_info(source, paths: list[str]):
     )
 
     if has_attributes(out["attrs"]):
-        fmt += " {4:%ds}" % width["attrs"]
+        fmt += " {attrs:%ds}" % width["attrs"]
 
-    print(fmt.format("path", "size", "shape", "dtype", "attrs"))
-    print(
-        fmt.format(
-            "=" * width["path"],
-            "=" * width["size"],
-            "=" * width["shape"],
-            "=" * width["dtype"],
-            "=" * width["attrs"],
-        )
-    )
+    if "link" in out:
+        fmt += " {link:%ds}" % width["link"]
+
+    print(fmt.format(**{key: key for key in out}))
+    print(fmt.format(**{key: "=" * width[key] for key in out}))
 
     for i in range(len(out["path"])):
-        print(
-            fmt.format(
-                out["path"][i],
-                out["size"][i],
-                out["shape"][i],
-                out["dtype"][i],
-                out["attrs"][i],
-            )
-        )
+        print(fmt.format(**{key: out[key][i] for key in out}))
 
 
 def print_attribute(source, paths: list[str]):
@@ -1230,6 +1237,7 @@ def _G5list_parser():
     """
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument("--min-attrs", type=int, help="Filter based on min. number of attributes")
+    parser.add_argument("--link-type", action="store_true", help="Print the link-type")
     parser.add_argument("-D", "--datasets", action="store_true", help="Print only datasets")
     parser.add_argument("-d", "--max-depth", type=int, help="Maximum depth to display")
     parser.add_argument("-f", "--fold", action="append", help="Fold paths")
@@ -1278,7 +1286,7 @@ def G5list(args: list[str]):
                 paths.remove(path)
 
         if args.info:
-            print_info(source, paths)
+            print_info(source, paths, link_type=args.link_type)
         elif args.long:
             print_attribute(source, paths)
         else:
