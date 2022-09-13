@@ -554,6 +554,11 @@ def copy(
     :param expand_soft: Copy the underlying data of a link, or copy as link with the same path.
     """
 
+    if type(source_datasets) is str:
+        source_datasets = [source_datasets]
+    if type(dest_datasets) is str:
+        dest_datasets = [dest_datasets]
+
     if len(source_datasets) == 0:
         return
 
