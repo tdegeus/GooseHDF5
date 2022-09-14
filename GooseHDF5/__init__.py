@@ -932,6 +932,7 @@ def compare_rename(
     attrs: bool = True,
     matching_dtype: bool = False,
     shallow: bool = False,
+    regex: bool = False,
 ) -> dict[list]:
     """
     Compare two files.
@@ -968,6 +969,7 @@ def compare_rename(
     :param attrs: Compare attributes (the same way at datasets).
     :param matching_dtype: Check that not only the data but also the type matches.
     :param shallow: Check only the presence of datasets, not their values, size, or attributes.
+    :param regex: Use regular expressions to match ``rename``.
     :return: Dictionary with difference.
     """
 
@@ -979,17 +981,36 @@ def compare_rename(
 
     paths_a, paths_b = _compare_paths(a, b, paths_a, paths_b, attrs)
 
-    for path_a, path_b in rename:
-        if path_a not in paths_a or path_b not in paths_b:
-            raise OSError("Renamed paths must be present")
-        paths_a.remove(path_a)
-        paths_b.remove(path_b)
+    rename_a = []
+    rename_b = []
+
+    if not regex:
+        for path_a, path_b in rename:
+            if path_a not in paths_a or path_b not in paths_b:
+                raise OSError("Renamed paths must be present")
+            rename_a.append(path_a)
+            rename_b.append(path_b)
+    else:
+        for pattern_a, pattern_b in rename:
+            for path_a in paths_a:
+                if re.match(rf"({pattern_a})(.*)", path_a):
+                    path_b = re.sub(rf"({pattern_a})(.*)", rf"{pattern_b}\2", path_a)
+                    if path_b not in paths_b:
+                        continue
+                    rename_a.append(path_a)
+                    rename_b.append(path_b)
+
+    keep_a = ~np.in1d(paths_a, rename_a)
+    keep_b = ~np.in1d(paths_b, rename_b)
+
+    paths_a = np.array(paths_a)[keep_a]
+    paths_b = np.array(paths_b)[keep_b]
 
     ret = compare(a, b, paths_a, paths_b, **opts)
     ret_a = {"!=": [], "==": []}
     ret_b = {"!=": [], "==": []}
 
-    for path_a, path_b in rename:
+    for path_a, path_b in zip(rename_a, rename_b):
         if not equal(a, b, path_a, path_b, **opts):
             ret_a["!="].append(path_a)
             ret_b["!="].append(path_b)
@@ -1339,9 +1360,7 @@ def _G5compare_parser():
         action="store_true",
         help="Only check for the presence of datasets and attributes. Do not check their values.",
     )
-    parser.add_argument(
-        "-r", "--renamed", nargs=2, action="append", help="Renamed paths (one per file)."
-    )
+    parser.add_argument("-r", "--renamed", nargs=2, action="append", help="Renamed paths.")
     parser.add_argument("-c", "--colors", default="dark", help="Color theme: dark/light/none")
     parser.add_argument("--table", default="SINGLE_BORDER", help="Table theme")
     parser.add_argument("-v", "--version", action="version", version=version)
@@ -1411,7 +1430,7 @@ def G5compare(args: list[str]):
 
     with h5py.File(args.a, "r") as a, h5py.File(args.b, "r") as b:
         comp, r_a, r_b = compare_rename(
-            a, b, rename=args.renamed, matching_dtype=args.dtype, shallow=args.shallow
+            a, b, rename=args.renamed, matching_dtype=args.dtype, shallow=args.shallow, regex=True
         )
 
     def print_path(path):
