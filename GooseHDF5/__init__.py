@@ -534,6 +534,7 @@ def copy(
     source_datasets: list[str],
     dest_datasets: list[str] = None,
     root: str = None,
+    source_root: str = None,
     recursive: bool = True,
     skip: bool = False,
     expand_soft: bool = True,
@@ -542,13 +543,15 @@ def copy(
     Copy groups/datasets from one HDF5-archive ``source`` to another HDF5-archive ``dest``.
     The datasets can be renamed by specifying a list of ``dest_datasets``
     (whose entries should correspond to the ``source_datasets``).
-    In addition, a ``root`` (path prefix) for the destination datasets name can be specified.
+    In addition, a ``root`` path prefix can be specified for the destination datasets.
+    Likewise, a ``source_root`` path prefix can be specified for the source datasets.
 
     :param source: The source HDF5-archive.
     :param dest: The destination HDF5-archive.
     :param source_datasets: List of dataset-paths in ``source``.
     :param dest_datasets: List of dataset-paths in ``dest``, defaults to ``source_datasets``.
     :param root: Path prefix for all ``dest_datasets``.
+    :param source_root: Path prefix for all ``source_datasets``.
     :param recursive: If the source is a group, copy all objects within that group recursively.
     :param skip: Skip datasets that are not present in source.
     :param expand_soft: Copy the underlying data of a link, or copy as link with the same path.
@@ -577,9 +580,16 @@ def copy(
     if root:
         dest_datasets = np.array([join(root, path, root=True) for path in dest_datasets])
 
+    if source_root:
+        source_datasets = np.array([join(source_root, path, root=True) for path in source_datasets])
+
+    for path in source_datasets:
+        if not exists(source, path):
+            raise OSError(f'Dataset "{path}" does not exists in source.')
+
     for path in dest_datasets:
         if exists(dest, path):
-            raise OSError(f'Dataset "{path}" already exists')
+            raise OSError(f'Dataset "{path}" already exists in dest.')
 
     isgroup = np.array([isinstance(source[path], h5py.Group) for path in source_datasets])
 
@@ -1462,12 +1472,11 @@ def _G5print_catch():
 
 
 def _G5list_catch():
-    G5list(sys.argv[1:])
-    # try:
-    #     G5list(sys.argv[1:])
-    # except Exception as e:
-    #     print(e)
-    #     return 1
+    try:
+        G5list(sys.argv[1:])
+    except Exception as e:
+        print(e)
+        return 1
 
 
 def _G5compare_catch():

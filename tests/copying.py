@@ -170,6 +170,25 @@ class Test_itereator(unittest.TestCase):
                 for path in datasets:
                     self.assertTrue(g5.equal(source, dest, path))
 
+    def test_copy_root(self):
+
+        datasets = ["/a", "/b/foo", "/c/d/foo"]
+        source_pre = "/my/source"
+        dest_pre = "/your/dest"
+
+        with h5py.File(basedir / "foo_1.h5", "w") as source:
+            with h5py.File(basedir / "bar_1.h5", "w") as dest:
+
+                for d in datasets:
+                    source[g5.join(source_pre, d)] = np.random.rand(10)
+
+                g5.copy(source, dest, datasets, source_root=source_pre, root=dest_pre)
+
+                for path in datasets:
+                    s = g5.join(source_pre, path)
+                    d = g5.join(dest_pre, path)
+                    self.assertTrue(g5.equal(source, dest, s, d))
+
 
 if __name__ == "__main__":
 
