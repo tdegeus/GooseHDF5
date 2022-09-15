@@ -42,10 +42,7 @@ jobs:
 
     - name: Run tests
       working-directory: tests
-      run: |
-        python paths.py
-        python copying.py
-        python cli.py
+      run: python -m unittest discover tests
 
     - name: Run tests CLI
       working-directory: tests/cli
