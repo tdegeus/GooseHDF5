@@ -127,15 +127,15 @@ def getdatapaths(
         :py:func:`getgroups` visits all groups in the file,
         regardless if they are folded (by ``fold`` or ``max_depth``).
         Depending on the file, this can be quite costly.
-        In that case, search for datasets-only using :py:func:`getdatasets`
-        (if your need allows for this).
+        If runtime is an issue consider searching for datasets only using :py:func:`getdatasets`
+        if your use-case allows it.
 
     :param file: A HDF5-archive.
     :param root: Start a certain point along the path-tree.
     :param max_depth: Set a maximum depth beyond which groups are folded.
     :param fold: Specify groups that are folded.
     :param fold_symbol: Use symbol to indicate that a group is folded.
-    :return: List of paths.
+    :return: List of paths (always absolute, so includes the ``root`` if used).
     """
     kwargs = dict(root=root, max_depth=max_depth, fold=fold, fold_symbol=fold_symbol)
     return list(getdatasets(file, **kwargs)) + list(getgroups(file, has_attrs=True, **kwargs))
@@ -164,7 +164,7 @@ def getgroups(
     :param int max_depth: Set a maximum depth beyond which groups are folded.
     :param fold: Specify groups that are folded.
     :param fold_symbol: Use symbol to indicate that a group is folded.
-    :return: List of paths.
+    :return: List of paths (always absolute, so includes the ``root`` if used).
     """
 
     root = abspath(root)
@@ -222,7 +222,7 @@ def getdatasets(
     :param max_depth: Set a maximum depth beyond which groups are folded.
     :param fold: Specify groups that are folded.
     :param fold_symbol: Use symbol to indicate that a group is folded.
-    :return: Iterator to paths.
+    :return: Iterator to paths (always absolute, so includes the ``root`` if used).
 
     :example:
 
@@ -901,6 +901,8 @@ def _compare_paths(
             fold = [fold]
 
     symbol = "/..." + str(uuid.uuid4())
+    fold_a = []
+    fold_b = []
 
     if paths_b is None and paths_a is not None:
         paths_b = paths_a
@@ -924,12 +926,14 @@ def _compare_paths(
         for path in paths_a:
             if path in fold:
                 paths_a.remove(path)
+                fold_a.append(path.split(symbol)[0])
 
         for path in paths_b:
             if path in fold:
                 paths_b.remove(path)
+                fold_b.append(path.split(symbol)[0])
 
-    return paths_a, paths_b
+    return paths_a, paths_b, fold_a, fold_b
 
 
 @singledispatch
@@ -956,6 +960,10 @@ def compare(
             "==" : ["/data/matching", ...]
         }
 
+    .. warning::
+
+        Folded groups are not compared in any way!
+
     :param a: HDF5-archive (as opened ``h5py.File`` or with the ``filepath``).
     :param b: HDF5-archive (as opened ``h5py.File`` or with the ``filepath``).
     :param paths_a: Paths from ``a`` to consider. Default: read from :py:func:`getdatapaths`.
@@ -966,6 +974,7 @@ def compare(
     :param only_datasets: Compare datasets only (not groups, regardless if they have attributes).
     :param max_depth: Set a maximum depth beyond which groups are folded.
     :param fold: Specify groups that are folded.
+    :param list_folded: Return folded groups under `"??"`
     :return: Dictionary with difference.
     """
     raise NotImplementedError("Overload not found.")
@@ -983,10 +992,11 @@ def _(
     only_datasets: bool = False,
     max_depth: int = None,
     fold: str | list[str] = None,
+    list_folded: bool = False,
 ) -> dict[list]:
 
     ret = {"<-": [], "->": [], "!=": [], "==": []}
-    paths_a, paths_b = _compare_paths(
+    paths_a, paths_b, fold_a, fold_b = _compare_paths(
         a, b, paths_a, paths_b, False if only_datasets else attrs, max_depth, fold
     )
 
@@ -1006,6 +1016,9 @@ def _(
         else:
             ret["=="].append(path)
 
+    if list_folded:
+        ret["??"] = [str(i) for i in np.unique(fold_a + fold_b)]
+
     return ret
 
 
@@ -1021,6 +1034,7 @@ def _(
     only_datasets: bool = False,
     max_depth: int = None,
     fold: str | list[str] = None,
+    list_folded: bool = False,
 ) -> dict[list]:
 
     with h5py.File(a, "r") as a_file, h5py.File(b, "r") as b_file:
@@ -1035,6 +1049,7 @@ def _(
             only_datasets,
             max_depth,
             fold,
+            list_folded,
         )
 
 
@@ -1051,6 +1066,7 @@ def compare_rename(
     only_datasets: bool = True,
     max_depth: int = None,
     fold: str | list[str] = None,
+    list_folded: bool = False,
 ) -> dict[list]:
     """
     Compare two files.
@@ -1091,6 +1107,7 @@ def compare_rename(
     :param only_datasets: Compare datasets only (not groups, regardless if they have attributes).
     :param max_depth: Set a maximum depth beyond which groups are folded.
     :param fold: Specify groups that are folded.
+    :param list_folded: Return folded groups under `"??"`
     :return: Dictionary with difference.
     """
 
@@ -1106,7 +1123,7 @@ def compare_rename(
         empty = {"!=": [], "==": []}
         return compare(a, b, paths_a, paths_b, **opts), empty, empty
 
-    paths_a, paths_b = _compare_paths(
+    paths_a, paths_b, fold_a, fold_b = _compare_paths(
         a, b, paths_a, paths_b, False if only_datasets else attrs, max_depth, fold
     )
 
@@ -1149,6 +1166,9 @@ def compare_rename(
         else:
             ret_a["=="].append(path_a)
             ret_b["=="].append(path_b)
+
+    if list_folded:
+        ret["??"] = [str(i) for i in np.unique(fold_a + fold_b)]
 
     return ret, ret_a, ret_b
 
@@ -1579,6 +1599,7 @@ def G5compare(args: list[str]):
             only_datasets=args.datasets,
             fold=args.fold,
             max_depth=args.max_depth,
+            list_folded=True,
         )
 
     def print_path(path):
@@ -1593,8 +1614,12 @@ def G5compare(args: list[str]):
                 return arg
             if arg[1] == "->":
                 return [arg[0], arg[1], ""]
-            if arg[1] == "<":
+            if arg[1] == "<-":
                 return ["", arg[1], arg[2]]
+            if arg[1] == "??":
+                return [arg[0], arg[1], arg[2]]
+            if arg[1] != "==":
+                raise ValueError(f"Unknown operator {arg[1]}")
 
         if arg[1] == "!=":
             return [
@@ -1606,6 +1631,11 @@ def G5compare(args: list[str]):
             return [colored(arg[0], "red", attrs=["bold", "concealed"]), arg[1], ""]
         if arg[1] == "<-":
             return ["", arg[1], colored(arg[2], "green", attrs=["bold"])]
+        if arg[1] == "??":
+            opts = dict(color="magenta", attrs=["bold"])
+            return [colored(arg[0], **opts), arg[1], colored(arg[2], **opts)]
+        if arg[1] != "==":
+                raise ValueError(f"Unknown operator {arg[1]}")
 
     out = prettytable.PrettyTable()
     if args.table == "PLAIN_COLUMNS":
