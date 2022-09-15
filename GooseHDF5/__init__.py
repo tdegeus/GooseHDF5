@@ -152,6 +152,15 @@ def getgroups(
     :return: List of paths.
     """
 
+    root = abspath(root)
+
+    if fold:
+        if type(fold) is str:
+            fold = [abspath(fold)]
+        else:
+            fold = [abspath(f) for f in fold]
+        fold = [f if f.startswith(root) else join(root, f) for f in fold]
+
     keys = []
     group = file[root]
     group.visit(lambda key: keys.append(key) if isinstance(group[key], h5py.Group) else None)
@@ -173,7 +182,7 @@ def getgroups(
         for i, path in enumerate(keys):
             for f in fold:
                 if path.startswith(f):
-                    keys[i] = abspath(f) + fold_symbol
+                    keys[i] = f + fold_symbol
         keys = list(set(keys))
 
     return keys
@@ -234,16 +243,25 @@ def getdatasets(
         the second because it was specifically requested to be folded.
     """
 
-    if max_depth and fold:
-        return _getpaths_fold_maxdepth(file, abspath(root), fold, max_depth, fold_symbol)
-
-    if max_depth:
-        return _getpaths_maxdepth(file, abspath(root), max_depth, fold_symbol)
+    root = abspath(root)
 
     if fold:
-        return _getpaths_fold(file, abspath(root), abspath(fold), fold_symbol)
+        if type(fold) is str:
+            fold = [abspath(fold)]
+        else:
+            fold = [abspath(f) for f in fold]
+        fold = [f if f.startswith(root) else join(root, f) for f in fold]
 
-    return _getpaths(file, abspath(root))
+    if max_depth and fold:
+        return _getpaths_fold_maxdepth(file, root, fold, max_depth, fold_symbol)
+
+    if max_depth:
+        return _getpaths_maxdepth(file, root, max_depth, fold_symbol)
+
+    if fold:
+        return _getpaths_fold(file, root, fold, fold_symbol)
+
+    return _getpaths(file, root)
 
 
 def _getpaths(file, root):
