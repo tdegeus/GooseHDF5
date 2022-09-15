@@ -562,20 +562,20 @@ def copy(
     :param expand_soft: Copy the underlying data of a link, or copy as link with the same path.
     """
 
+    if len(source_datasets) == 0:
+        return
+
     if type(source_datasets) is str:
         source_datasets = [source_datasets]
     if type(dest_datasets) is str:
         dest_datasets = [dest_datasets]
 
-    if len(source_datasets) == 0:
-        return
-
     source_datasets = np.array([abspath(path) for path in source_datasets])
 
     if not dest_datasets:
-        dest_datasets = [path for path in source_datasets]
-
-    dest_datasets = np.array(dest_datasets)
+        dest_datasets = source_datasets.copy()
+    else:
+        dest_datasets = np.array([abspath(path) for path in dest_datasets])
 
     if skip:
         keep = [i in source for i in source_datasets]
@@ -583,17 +583,19 @@ def copy(
         dest_datasets = dest_datasets[keep]
 
     if root:
-        dest_datasets = np.array([join(root, path, root=True) for path in dest_datasets])
+        root = abspath(root)
+        dest_datasets = np.array([join(root, path) for path in dest_datasets])
 
     if source_root:
-        source_datasets = np.array([join(source_root, path, root=True) for path in source_datasets])
+        source_root = abspath(source_root)
+        source_datasets = np.array([join(source_root, path) for path in source_datasets])
 
     for path in source_datasets:
-        if not exists(source, path):
+        if path not in source:
             raise OSError(f'Dataset "{path}" does not exists in source.')
 
     for path in dest_datasets:
-        if exists(dest, path):
+        if path in dest:
             raise OSError(f'Dataset "{path}" already exists in dest.')
 
     isgroup = np.array([isinstance(source[path], h5py.Group) for path in source_datasets])
