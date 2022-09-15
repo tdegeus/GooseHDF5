@@ -3,7 +3,7 @@ Examples
 ********
 
 Copy part of a file
-====================
+===================
 
 Suppose that you want to copy all but some dataset from a file.
 In that case you can use
@@ -16,7 +16,4 @@ Consider the following example.
 .. literalinclude:: examples/copy_modify-selection.py
    :language: python
 
-.. note::
-
-   The copy functions from *h5py* copy attributes as well.
-   By extension also :py:meth:`GooseHDF5.copy` copies all attributes.
+The last line includes an example on how to verify if a set of datasets is indeed the same.

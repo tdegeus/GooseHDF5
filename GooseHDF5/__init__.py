@@ -619,7 +619,9 @@ def copy(
     :param source_root: Path prefix for all ``source_datasets``.
     :param recursive: If the source is a group, copy all objects within that group recursively.
     :param skip: Skip datasets that are not present in source.
-    :param expand_soft: Copy the underlying data of a link, or copy as link with the same path.
+    :param expand_soft:
+        If True: create a copy of the source dataset.
+        If False: create a link (with identical path as in the source).
     """
 
     if len(source_datasets) == 0:
@@ -677,34 +679,6 @@ def copy(
         _copy_attrs(
             source, dest, source_datasets[isgroup], dest_datasets[isgroup], expand_soft=expand_soft
         )
-
-
-def copydatasets(
-    source: h5py.File,
-    dest: h5py.File,
-    source_datasets: list[str],
-    dest_datasets: list[str] = None,
-    root: str = None,
-):
-    """
-    Copy datasets from one HDF5-archive ``source`` to another HDF5-archive ``dest``.
-    The datasets can be renamed by specifying a list of ``dest_datasets``
-    (whose entries should correspond to the ``source_datasets``).
-    If the source is a Group object,
-    by default all objects within that group will be copied recursively.
-
-    In addition, a ``root`` (path prefix) for the destination datasets name can be specified.
-
-    :param source: The source HDF5-archive.
-    :param dest: The destination HDF5-archive.
-    :param source_datasets: List of dataset-paths in ``source``.
-    :param dest_datasets: List of dataset-paths in ``dest``, defaults to ``source_datasets``.
-    :param root: Path prefix for all ``dest_datasets``.
-    """
-
-    warnings.warn("copydatasets() is deprecated, use copy().", category=DeprecationWarning)
-
-    return copy(source, dest, source_datasets, dest_datasets, root)
 
 
 def isnumeric(a):
