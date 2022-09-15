@@ -209,15 +209,15 @@ def getdatasets(
     """
 
     if max_depth and fold:
-        return _getpaths_fold_maxdepth(file, root, fold, max_depth)
+        return _getpaths_fold_maxdepth(file, abspath(root), fold, max_depth)
 
     if max_depth:
-        return _getpaths_maxdepth(file, root, max_depth)
+        return _getpaths_maxdepth(file, abspath(root), max_depth)
 
     if fold:
-        return _getpaths_fold(file, root, fold, fold_symbol=fold_symbol)
+        return _getpaths_fold(file, abspath(root), abspath(fold), fold_symbol=fold_symbol)
 
-    return _getpaths(file, root)
+    return _getpaths(file, abspath(root))
 
 
 def _getpaths(file, root):
