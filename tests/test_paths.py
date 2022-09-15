@@ -44,6 +44,21 @@ class Test_iterator(unittest.TestCase):
         self.assertEqual(sorted(datasets), sorted(paths))
         self.assertEqual(sorted([datasets[-1]]), sorted(paths_c))
 
+    def test_getdatasets_fold(self):
+
+        datasets = ["/a", "/b/foo", "/c/d/foo"]
+
+        with h5py.File(basedir / "foo.h5", "w") as file:
+
+            for d in datasets:
+                file[d] = [0, 1, 2]
+
+            paths = sorted(list(g5.getdatasets(file, fold="c")))
+            self.assertEqual(paths, sorted(["/a", "/b/foo", "/c/..."]))
+
+            paths = sorted(list(g5.getdatasets(file, fold="/c", fold_symbol="")))
+            self.assertEqual(paths, sorted(["/a", "/b/foo", "/c"]))
+
 
     def test_getgroups(self):
 
