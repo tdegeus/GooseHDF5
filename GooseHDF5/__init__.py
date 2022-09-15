@@ -108,7 +108,13 @@ def join(*args, root: bool = False) -> str:
     return posixpath.join(*lst)
 
 
-def getdatapaths(file, root: str = "/") -> list[str]:
+def getdatapaths(
+    file: h5py.File,
+    root: str = "/",
+    max_depth: int = None,
+    fold: str | list[str] = None,
+    fold_symbol: str = "/...",
+) -> list[str]:
     """
     Get paths to all:
 
@@ -116,14 +122,23 @@ def getdatapaths(file, root: str = "/") -> list[str]:
     -   Groups that contain attributes.
 
     :param file: A HDF5-archive.
-    :param root: Start at a certain point along the path-tree.
+    :param root: Start a certain point along the path-tree.
+    :param max_depth: Set a maximum depth beyond which groups are folded.
+    :param fold: Specify groups that are folded.
+    :param fold_symbol: Use symbol to indicate that a group is folded.
     :return: List of paths.
     """
-    return list(getdatasets(file, root=root)) + list(getgroups(file, root=root, has_attrs=True))
+    kwargs = dict(root=root, max_depth=max_depth, fold=fold, fold_symbol=fold_symbol)
+    return list(getdatasets(file, **kwargs)) + list(getgroups(file, has_attrs=True, **kwargs))
 
 
 def getgroups(
-    file: h5py.File, root: str = "/", has_attrs: bool = False, max_depth: int = None
+    file: h5py.File,
+    root: str = "/",
+    has_attrs: bool = False,
+    max_depth: int = None,
+    fold: str | list[str] = None,
+    fold_symbol: str = "/...",
 ) -> list[str]:
     """
     Paths of all groups in a HDF5-archive.
@@ -132,6 +147,8 @@ def getgroups(
     :param root: Start at a certain point along the path-tree.
     :param has_attrs: Return only groups that have attributes.
     :param int max_depth: Set a maximum depth beyond which groups are folded.
+    :param fold: Specify groups that are folded.
+    :param fold_symbol: Use symbol to indicate that a group is folded.
     :return: List of paths.
     """
 
@@ -147,7 +164,16 @@ def getgroups(
         n = len(list(filter(None, root.split("/"))))
         for i, path in enumerate(keys):
             if len(path.split("/")) - 1 > n + max_depth:
-                keys[i] = posixpath.join("/", *path.split("/")[: n + max_depth + 1]) + "/..."
+                keys[i] = posixpath.join("/", *path.split("/")[: n + max_depth + 1]) + fold_symbol
+        keys = list(set(keys))
+
+    if fold is not None:
+        if type(fold) is str:
+            fold = [fold]
+        for i, path in enumerate(keys):
+            for f in fold:
+                if path.startswith(f):
+                    keys[i] = abspath(f) + fold_symbol
         keys = list(set(keys))
 
     return keys
@@ -209,13 +235,13 @@ def getdatasets(
     """
 
     if max_depth and fold:
-        return _getpaths_fold_maxdepth(file, abspath(root), fold, max_depth)
+        return _getpaths_fold_maxdepth(file, abspath(root), fold, max_depth, fold_symbol)
 
     if max_depth:
-        return _getpaths_maxdepth(file, abspath(root), max_depth)
+        return _getpaths_maxdepth(file, abspath(root), max_depth, fold_symbol)
 
     if fold:
-        return _getpaths_fold(file, abspath(root), abspath(fold), fold_symbol=fold_symbol)
+        return _getpaths_fold(file, abspath(root), abspath(fold), fold_symbol)
 
     return _getpaths(file, abspath(root))
 
@@ -248,7 +274,7 @@ def _getpaths(file, root):
     yield from iterator(file[root], root)
 
 
-def _getpaths_maxdepth(file, root, max_depth):
+def _getpaths_maxdepth(file, root, max_depth, fold_symbol):
     r"""
     Specialization for :py:func:`getpaths` such that:
 
@@ -269,7 +295,7 @@ def _getpaths_maxdepth(file, root, max_depth):
 
             elif len(path.split("/")) - 1 >= max_depth:
                 if len(list(iterator(item, path, max_depth + 1))) > 0:
-                    yield path + "/..."
+                    yield path + fold_symbol
                 else:
                     yield path
 
@@ -287,7 +313,7 @@ def _getpaths_maxdepth(file, root, max_depth):
     yield from iterator(file[root], root, max_depth)
 
 
-def _getpaths_fold(file, root, fold, fold_symbol="/..."):
+def _getpaths_fold(file, root, fold, fold_symbol):
     r"""
     Specialization for :py:func:`getpaths` such that:
 
@@ -323,7 +349,7 @@ def _getpaths_fold(file, root, fold, fold_symbol="/..."):
     yield from iterator(file[root], root, fold)
 
 
-def _getpaths_fold_maxdepth(file, root, fold, max_depth):
+def _getpaths_fold_maxdepth(file, root, fold, max_depth, fold_symbol):
     r"""
     Specialization for :py:func:`getpaths` such that:
 
@@ -344,10 +370,10 @@ def _getpaths_fold_maxdepth(file, root, fold, max_depth):
                 yield path
 
             elif len(path.split("/")) - 1 >= max_depth:
-                yield path + "/..."
+                yield path + fold_symbol
 
             elif path in fold:
-                yield path + "/..."
+                yield path + fold_symbol
 
             elif isinstance(item, h5py.Group):
                 yield from iterator(item, path, fold, max_depth)

@@ -59,7 +59,6 @@ class Test_iterator(unittest.TestCase):
             paths = sorted(list(g5.getdatasets(file, fold="/c", fold_symbol="")))
             self.assertEqual(paths, sorted(["/a", "/b/foo", "/c"]))
 
-
     def test_getgroups(self):
 
         datasets = ["/a", "/b/foo", "/c/d/foo"]
@@ -85,6 +84,29 @@ class Test_iterator(unittest.TestCase):
             meta.attrs["version"] = 0
 
             self.assertEqual(g5.getgroups(file, has_attrs=True), ["/meta"])
+
+    def test_getgroups_attrs_fold(self):
+        """
+        Detect a group with attributes at a certain depth, but fold it
+        """
+
+        datasets = ["/a", "/b/foo", "/c/d/foo"]
+
+        with h5py.File(basedir / "foo.h5", "w") as file:
+
+            for d in datasets:
+                file[d] = [0, 1, 2]
+
+            meta = file.create_group("meta").create_group("at").create_group("depth")
+            meta.attrs["version"] = 0
+
+            for symbol in ["/...", ""]:
+
+                paths = g5.getgroups(file, fold="/meta", fold_symbol=symbol, has_attrs=True)
+                self.assertEqual(paths, ["/meta" + symbol])
+
+                paths = g5.getgroups(file, max_depth=1, fold_symbol=symbol, has_attrs=True)
+                self.assertEqual(paths, ["/meta" + symbol])
 
     def test_compare(self):
 
