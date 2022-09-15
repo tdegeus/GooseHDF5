@@ -1667,11 +1667,14 @@ def G5compare(args: list[str]):
 
     print(out.get_string())
 
+
 def _G5print_cli():
     G5print(sys.argv[1:])
 
+
 def _G5list_cli():
     G5list(sys.argv[1:])
+
 
 def _G5compare_cli():
     G5compare(sys.argv[1:])
