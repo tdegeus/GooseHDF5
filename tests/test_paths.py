@@ -1,4 +1,5 @@
 import os
+import pathlib
 import shutil
 import unittest
 
@@ -8,64 +9,61 @@ import numpy as np
 import GooseHDF5 as g5
 
 
-class Test_itereator(unittest.TestCase):
-    """
-    Tests.
-    """
+basedir = pathlib.Path(__file__).parent / "mytest"
+
+
+class Test_iterator(unittest.TestCase):
+    """ """
+
+    @classmethod
+    def setUpClass(self):
+        """
+        Create a temporary directory for the test files.
+        """
+        os.makedirs(basedir, exist_ok=True)
+
+    @classmethod
+    def tearDownClass(self):
+        """
+        Remove the temporary directory.
+        """
+        shutil.rmtree(basedir)
 
     def test_getdatasets(self):
 
-        dirname = "mytest"
-        filename = "foo.h5"
-        filepath = os.path.join(dirname, filename)
-        os.makedirs(dirname, exist_ok=True)
+        datasets = ["/a", "/b/foo", "/c/d/foo"]
 
-        Datasets = ["/a", "/b/foo", "/c/d/foo"]
+        with h5py.File(basedir / "foo.h5", "w") as file:
 
-        with h5py.File(filepath, "w") as file:
-
-            for d in Datasets:
+            for d in datasets:
                 file[d] = [0, 1, 2]
 
             paths = list(g5.getdatasets(file))
             paths_c = list(g5.getdatasets(file, root="/c"))
 
-        self.assertEqual(sorted(Datasets), sorted(paths))
-        self.assertEqual(sorted([Datasets[-1]]), sorted(paths_c))
+        self.assertEqual(sorted(datasets), sorted(paths))
+        self.assertEqual(sorted([datasets[-1]]), sorted(paths_c))
 
-        shutil.rmtree(dirname)
 
     def test_getgroups(self):
 
-        dirname = "mytest"
-        filename = "foo.h5"
-        filepath = os.path.join(dirname, filename)
-        os.makedirs(dirname, exist_ok=True)
+        datasets = ["/a", "/b/foo", "/c/d/foo"]
 
-        Datasets = ["/a", "/b/foo", "/c/d/foo"]
+        with h5py.File(basedir / "foo.h5", "w") as file:
 
-        with h5py.File(filepath, "w") as file:
-
-            for d in Datasets:
+            for d in datasets:
                 file[d] = [0, 1, 2]
 
             self.assertEqual(g5.getgroups(file), ["/b", "/c", "/c/d"])
             self.assertEqual(g5.getgroups(file, root="/c"), ["/c/d"])
 
-        shutil.rmtree(dirname)
-
     def test_getgroups_attrs(self):
 
-        dirname = "mytest"
-        filename = "foo.h5"
-        filepath = os.path.join(dirname, filename)
-        os.makedirs(dirname, exist_ok=True)
+        datasets = ["/a", "/b/foo", "/c/d/foo"]
 
-        Datasets = ["/a", "/b/foo", "/c/d/foo"]
+        with h5py.File(basedir / "foo.h5", "w") as file:
 
-        with h5py.File(filepath, "w") as file:
-
-            for d in Datasets:
+            for d in datasets:
                 file[d] = [0, 1, 2]
 
             meta = file.create_group("meta")
@@ -73,18 +71,9 @@ class Test_itereator(unittest.TestCase):
 
             self.assertEqual(g5.getgroups(file, has_attrs=True), ["/meta"])
 
-        shutil.rmtree(dirname)
-
     def test_compare(self):
 
-        dirname = "mytest"
-        filename_a = "foo.h5"
-        filename_b = "bar.h5"
-        filepath_a = os.path.join(dirname, filename_a)
-        filepath_b = os.path.join(dirname, filename_b)
-        os.makedirs(dirname, exist_ok=True)
-
-        with h5py.File(filepath_a, "w") as source, h5py.File(filepath_b, "w") as other:
+        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as other:
 
             # NumPy array
 
@@ -253,8 +242,6 @@ class Test_itereator(unittest.TestCase):
         self.assertEqual(expected_all, check_all)
         self.assertEqual(expected_all_shallow, check_all_shallow)
         self.assertEqual(expected_datasets, check_datasets)
-
-        shutil.rmtree(dirname)
 
     def test_truncate_print_path(self):
 
