@@ -280,7 +280,7 @@ def getdatasets(
 
 
 def _getpaths(file, root):
-    r"""
+    """
     Specialization for :py:func:`getpaths`.
     """
 
@@ -308,7 +308,7 @@ def _getpaths(file, root):
 
 
 def _getpaths_maxdepth(file, root, max_depth, fold_symbol):
-    r"""
+    """
     Specialization for :py:func:`getpaths` such that:
 
     - Groups deeper than a certain maximum depth are folded.
@@ -347,7 +347,7 @@ def _getpaths_maxdepth(file, root, max_depth, fold_symbol):
 
 
 def _getpaths_fold(file, root, fold, fold_symbol):
-    r"""
+    """
     Specialization for :py:func:`getpaths` such that:
 
     - Certain groups are folded.
