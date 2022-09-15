@@ -1656,6 +1656,10 @@ def G5compare(args: list[str]):
     for path_a, path_b in zip(r_a["!="], r_b["!="]):
         out.add_row(def_row([path_a, "!=", path_b], args.colors))
 
+    if len(out.rows) == 0:
+        print("No differences found")
+        return
+
     file_a = print_path(args.a)
     file_b = print_path(args.b)
     n = max(len(row[0]) for row in out.rows)
