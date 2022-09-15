@@ -138,7 +138,8 @@ def getdatapaths(
     :return: List of paths (always absolute, so includes the ``root`` if used).
     """
     kwargs = dict(root=root, max_depth=max_depth, fold=fold, fold_symbol=fold_symbol)
-    return list(getdatasets(file, **kwargs)) + list(getgroups(file, has_attrs=True, **kwargs))
+    ret = list(getdatasets(file, **kwargs)) + list(getgroups(file, has_attrs=True, **kwargs))
+    return list(set(ret))
 
 
 def getgroups(
