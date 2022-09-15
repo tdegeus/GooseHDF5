@@ -963,6 +963,7 @@ def compare(
     .. warning::
 
         Folded groups are not compared in any way!
+        Use `list_folded` to include this in the output.
 
     :param a: HDF5-archive (as opened ``h5py.File`` or with the ``filepath``).
     :param b: HDF5-archive (as opened ``h5py.File`` or with the ``filepath``).
@@ -1094,6 +1095,11 @@ def compare_rename(
             "!=" : ["/path/in/b/with/rename/path/not_equal", ...],
             "==" : ["/path/in/b/with/rename/path/matching", ...]
         }
+
+    .. warning::
+
+        Folded groups are not compared in any way!
+        Use `list_folded` to include this in the output.
 
     :param a: HDF5-archive (as opened ``h5py.File`` or with the ``filepath``).
     :param b: HDF5-archive (as opened ``h5py.File`` or with the ``filepath``).
