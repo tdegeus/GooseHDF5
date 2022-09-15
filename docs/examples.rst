@@ -2,22 +2,21 @@
 Examples
 ********
 
-Copy almost all files
-=====================
+Copy part of a file
+====================
 
 Suppose that you want to copy all but some dataset from a file.
 In that case you can use
 
-*   :py:meth:`GooseHDF5.getdatasets` to get a list of all datasets.
-*   :py:meth:`GooseHDF5.copydatasets` to copy a bunch of datasets.
+*   :py:meth:`GooseHDF5.getdatapaths`
+*   :py:meth:`GooseHDF5.copy`
 
 Consider the following example.
 
 .. literalinclude:: examples/copy_modify-selection.py
    :language: python
 
-.. warning::
+.. note::
 
-    The copy functions from *h5py* copy attributes as well.
-    By extension also :py:meth:`GooseHDF5.copydatasets` copies all attributes.
-    If you manipulate data yourself you will want to make sure that copy the relevant attributes.
+   The copy functions from *h5py* copy attributes as well.
+   By extension also :py:meth:`GooseHDF5.copy` copies all attributes.
