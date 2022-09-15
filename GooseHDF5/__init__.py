@@ -154,7 +154,11 @@ def getgroups(
 
 
 def getdatasets(
-    file: h5py.File, root: str = "/", max_depth: int = None, fold: str | list[str] = None
+    file: h5py.File,
+    root: str = "/",
+    max_depth: int = None,
+    fold: str | list[str] = None,
+    fold_symbol: str = "/...",
 ) -> Iterator:
     r"""
     Iterator to transverse all datasets in a HDF5-archive.
@@ -167,6 +171,7 @@ def getdatasets(
     :param root: Start a certain point along the path-tree.
     :param max_depth: Set a maximum depth beyond which groups are folded.
     :param fold: Specify groups that are folded.
+    :param fold_symbol: Use symbol to indicate that a group is folded.
     :return: Iterator to paths.
 
     :example:
@@ -210,7 +215,7 @@ def getdatasets(
         return _getpaths_maxdepth(file, root, max_depth)
 
     if fold:
-        return _getpaths_fold(file, root, fold)
+        return _getpaths_fold(file, root, fold, fold_symbol=fold_symbol)
 
     return _getpaths(file, root)
 
@@ -282,7 +287,7 @@ def _getpaths_maxdepth(file, root, max_depth):
     yield from iterator(file[root], root, max_depth)
 
 
-def _getpaths_fold(file, root, fold):
+def _getpaths_fold(file, root, fold, fold_symbol="/..."):
     r"""
     Specialization for :py:func:`getpaths` such that:
 
@@ -302,7 +307,7 @@ def _getpaths_fold(file, root, fold):
                 yield path
 
             elif path in fold:
-                yield path + "/..."
+                yield path + fold_symbol
 
             elif isinstance(item, h5py.Group):
                 yield from iterator(item, path, fold)
