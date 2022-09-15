@@ -1465,6 +1465,7 @@ def G5list(args: list[str]):
 
     parser = _G5list_parser()
     args = parser.parse_args(args)
+    opts = dict(root=args.root, max_depth=args.max_depth, fold=args.fold)
 
     if not os.path.isfile(args.source):
         raise OSError(f'"{args.source}" does not exist')
@@ -1474,11 +1475,9 @@ def G5list(args: list[str]):
         if args.layer is not None:
             paths = sorted(join(args.layer, i, root=True) for i in source[args.layer])
         else:
-            paths = list(
-                getdatasets(source, root=args.root, max_depth=args.max_depth, fold=args.fold)
-            )
+            paths = list(getdatasets(source, **opts))
             if not args.datasets:
-                paths += getgroups(source, root=args.root, has_attrs=True, max_depth=args.max_depth)
+                paths += getgroups(source, has_attrs=True, **opts)
             paths = sorted(list(set(paths)))
 
         if args.min_attrs is not None:
