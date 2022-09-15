@@ -7,6 +7,7 @@ import os
 import posixpath
 import re
 import sys
+import uuid
 import warnings
 from functools import singledispatch
 from typing import Iterator
@@ -883,26 +884,50 @@ def allequal(
 
 
 def _compare_paths(
-    a: h5py.File, b: h5py.File, paths_a: list[str], paths_b: list[str], attrs: bool
+    a: h5py.File,
+    b: h5py.File,
+    paths_a: list[str],
+    paths_b: list[str],
+    attrs: bool,
+    max_depth: int,
+    fold: str[list],
 ) -> type[list[str], list[str]]:
     """
     Default paths for :py:func:`compare`.
     """
+
+    if fold:
+        if type(fold) is str:
+            fold = [fold]
+
+    symbol = "/..." + str(uuid.uuid4())
 
     if paths_b is None and paths_a is not None:
         paths_b = paths_a
 
     if paths_a is None:
         if attrs:
-            paths_a = getdatapaths(a)
+            paths_a = getdatapaths(a, max_depth=max_depth, fold=fold, fold_symbol=symbol)
         else:
-            paths_a = list(getdatasets(a))
+            paths_a = list(getdatasets(a, max_depth=max_depth, fold=fold, fold_symbol=symbol))
 
     if paths_b is None:
         if attrs:
-            paths_b = getdatapaths(b)
+            paths_b = getdatapaths(b, max_depth=max_depth, fold=fold, fold_symbol=symbol)
         else:
-            paths_b = list(getdatasets(b))
+            paths_b = list(getdatasets(b, max_depth=max_depth, fold=fold, fold_symbol=symbol))
+
+    if fold:
+
+        fold = [join(f, symbol, root=True) for f in fold]
+
+        for path in paths_a:
+            if path in fold:
+                paths_a.remove(path)
+
+        for path in paths_b:
+            if path in fold:
+                paths_b.remove(path)
 
     return paths_a, paths_b
 
@@ -916,6 +941,9 @@ def compare(
     attrs: bool = True,
     matching_dtype: bool = False,
     shallow: bool = False,
+    only_datasets: bool = False,
+    fold: str | list[str] = None,
+    max_depth: int = None,
 ) -> dict[list]:
     """
     Compare two files.
@@ -935,6 +963,9 @@ def compare(
     :param attrs: Compare attributes (the same way at datasets).
     :param matching_dtype: Check that not only the data but also the type matches.
     :param shallow: Check only the presence of datasets, not their values, size, or attributes.
+    :param only_datasets: Compare datasets only (not groups, regardless if they have attributes).
+    :param max_depth: Set a maximum depth beyond which groups are folded.
+    :param fold: Specify groups that are folded.
     :return: Dictionary with difference.
     """
     raise NotImplementedError("Overload not found.")
@@ -949,10 +980,15 @@ def _(
     attrs: bool = True,
     matching_dtype: bool = False,
     shallow: bool = False,
+    only_datasets: bool = False,
+    max_depth: int = None,
+    fold: str | list[str] = None,
 ) -> dict[list]:
 
     ret = {"<-": [], "->": [], "!=": [], "==": []}
-    paths_a, paths_b = _compare_paths(a, b, paths_a, paths_b, attrs)
+    paths_a, paths_b = _compare_paths(
+        a, b, paths_a, paths_b, False if only_datasets else attrs, max_depth, fold
+    )
 
     not_in_b = [str(i) for i in np.setdiff1d(paths_a, paths_b)]
     not_in_a = [str(i) for i in np.setdiff1d(paths_b, paths_a)]
@@ -982,10 +1018,24 @@ def _(
     attrs: bool = True,
     matching_dtype: bool = False,
     shallow: bool = False,
+    only_datasets: bool = False,
+    max_depth: int = None,
+    fold: str | list[str] = None,
 ) -> dict[list]:
 
     with h5py.File(a, "r") as a_file, h5py.File(b, "r") as b_file:
-        return compare(a_file, b_file, paths_a, paths_a, attrs, matching_dtype, shallow)
+        return compare(
+            a_file,
+            b_file,
+            paths_a,
+            paths_b,
+            attrs,
+            matching_dtype,
+            shallow,
+            only_datasets,
+            max_depth,
+            fold,
+        )
 
 
 def compare_rename(
@@ -998,6 +1048,9 @@ def compare_rename(
     matching_dtype: bool = False,
     shallow: bool = False,
     regex: bool = False,
+    only_datasets: bool = True,
+    max_depth: int = None,
+    fold: str | list[str] = None,
 ) -> dict[list]:
     """
     Compare two files.
@@ -1035,16 +1088,27 @@ def compare_rename(
     :param matching_dtype: Check that not only the data but also the type matches.
     :param shallow: Check only the presence of datasets, not their values, size, or attributes.
     :param regex: Use regular expressions to match ``rename``.
+    :param only_datasets: Compare datasets only (not groups, regardless if they have attributes).
+    :param max_depth: Set a maximum depth beyond which groups are folded.
+    :param fold: Specify groups that are folded.
     :return: Dictionary with difference.
     """
 
-    opts = dict(attrs=attrs, matching_dtype=matching_dtype, shallow=shallow)
+    opts = dict(
+        attrs=attrs,
+        matching_dtype=matching_dtype,
+        shallow=shallow,
+        max_depth=max_depth,
+        fold=fold,
+    )
 
     if rename is None:
         empty = {"!=": [], "==": []}
         return compare(a, b, paths_a, paths_b, **opts), empty, empty
 
-    paths_a, paths_b = _compare_paths(a, b, paths_a, paths_b, attrs)
+    paths_a, paths_b = _compare_paths(
+        a, b, paths_a, paths_b, False if only_datasets else attrs, max_depth, fold
+    )
 
     rename_a = []
     rename_b = []
@@ -1074,6 +1138,9 @@ def compare_rename(
     ret = compare(a, b, paths_a, paths_b, **opts)
     ret_a = {"!=": [], "==": []}
     ret_b = {"!=": [], "==": []}
+
+    opts.pop("max_depth")
+    opts.pop("fold")
 
     for path_a, path_b in zip(rename_a, rename_b):
         if not equal(a, b, path_a, path_b, **opts):
@@ -1430,6 +1497,9 @@ def _G5compare_parser():
         action="store_true",
         help="Only check for the presence of datasets and attributes. Do not check their values.",
     )
+    parser.add_argument("-D", "--datasets", action="store_true", help="Print only datasets")
+    parser.add_argument("-d", "--max-depth", type=int, help="Maximum depth to display")
+    parser.add_argument("-f", "--fold", action="append", help="Fold paths")
     parser.add_argument("-r", "--renamed", nargs=2, action="append", help="Renamed paths.")
     parser.add_argument("-c", "--colors", default="dark", help="Color theme: dark/light/none")
     parser.add_argument("--table", default="SINGLE_BORDER", help="Table theme")
@@ -1500,7 +1570,15 @@ def G5compare(args: list[str]):
 
     with h5py.File(args.a, "r") as a, h5py.File(args.b, "r") as b:
         comp, r_a, r_b = compare_rename(
-            a, b, rename=args.renamed, matching_dtype=args.dtype, shallow=args.shallow, regex=True
+            a,
+            b,
+            rename=args.renamed,
+            matching_dtype=args.dtype,
+            shallow=args.shallow,
+            regex=True,
+            only_datasets=args.datasets,
+            fold=args.fold,
+            max_depth=args.max_depth,
         )
 
     def print_path(path):
