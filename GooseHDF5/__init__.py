@@ -1628,11 +1628,8 @@ def G5compare(args: list[str]):
                 raise ValueError(f"Unknown operator {arg[1]}")
 
         if arg[1] == "!=":
-            return [
-                colored(arg[0], "cyan", attrs=["bold"]),
-                arg[1],
-                colored(arg[2], "cyan", attrs=["bold"]),
-            ]
+            opts = dict(color="cyan", attrs=["bold"])
+            return [colored(arg[0], **opts), arg[1], colored(arg[2], **opts)]
         if arg[1] == "->":
             return [colored(arg[0], "red", attrs=["bold", "concealed"]), arg[1], ""]
         if arg[1] == "<-":
@@ -1641,7 +1638,7 @@ def G5compare(args: list[str]):
             opts = dict(color="magenta", attrs=["bold"])
             return [colored(arg[0], **opts), arg[1], colored(arg[2], **opts)]
         if arg[1] != "==":
-                raise ValueError(f"Unknown operator {arg[1]}")
+            raise ValueError(f"Unknown operator {arg[1]}")
 
     out = prettytable.PrettyTable()
     if args.table == "PLAIN_COLUMNS":
