@@ -121,6 +121,14 @@ def getdatapaths(
     -   Datasets, and
     -   Groups that contain attributes.
 
+    .. warning::
+
+        :py:func:`getgroups` visits all groups in the file,
+        regardless if they are folded (by ``fold`` or ``max_depth``).
+        Depending on the file, this can be quite costly.
+        In that case, search for datasets-only using :py:func:`getdatasets`
+        (if your need allows for this).
+
     :param file: A HDF5-archive.
     :param root: Start a certain point along the path-tree.
     :param max_depth: Set a maximum depth beyond which groups are folded.
@@ -142,6 +150,12 @@ def getgroups(
 ) -> list[str]:
     """
     Paths of all groups in a HDF5-archive.
+
+    .. warning::
+
+        The function visits all groups in the file,
+        regardless if they are folded (by ``fold`` or ``max_depth``).
+        Depending on the file, this can be quite costly.
 
     :param file: A HDF5-archive.
     :param root: Start at a certain point along the path-tree.
@@ -1324,8 +1338,13 @@ def _G5list_parser():
     """
 
     desc = """List datasets (or groups of datasets) in a HDF5-file.
-    Note that if you have a really big file the ``--layer`` option can be much faster than
-    searching the entire file.
+
+    If you have a really big file:
+
+    *   The ``--layer`` option can be much faster than searching the entire file.
+
+    *   Search only ``--datasets`` when folding can be much faster.
+        The ``getgroups`` function does search the entire depth.
     """
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument("--min-attrs", type=int, help="Filter based on min. number of attributes")
