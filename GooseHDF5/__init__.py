@@ -1124,6 +1124,7 @@ def compare_rename(
         shallow=shallow,
         max_depth=max_depth,
         fold=fold,
+        list_folded=list_folded,
     )
 
     if rename is None:
@@ -1165,6 +1166,7 @@ def compare_rename(
 
     opts.pop("max_depth")
     opts.pop("fold")
+    opts.pop("list_folded")
 
     for path_a, path_b in zip(rename_a, rename_b):
         if not equal(a, b, path_a, path_b, **opts):
