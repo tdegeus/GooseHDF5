@@ -280,6 +280,29 @@ class Test_iterator(unittest.TestCase):
         self.assertEqual(expected_all_shallow, check_all_shallow)
         self.assertEqual(expected_datasets, check_datasets)
 
+    def test_compare_fold(self):
+        """
+        Compare only data that is not ignored because is it too deep or folded.
+        """
+
+        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as other:
+
+            a = np.random.random(25)
+
+            source["/equal/at/some/depth"] = a
+            source["/different/at/some/depth"] = a
+
+            other["/equal/at/some/depth"] = a
+            other["/different/at/some/depth"] = np.random.random(25)
+
+            ret = g5.compare(source, other, fold="different")
+
+            for key in ret:
+                if key == "==":
+                    self.assertEqual(ret[key], ["/equal/at/some/depth"])
+                else:
+                    self.assertEqual(ret[key], [])
+
     def test_truncate_print_path(self):
 
         path = os.path.join("path", "to", "long", "foo", "bar")
