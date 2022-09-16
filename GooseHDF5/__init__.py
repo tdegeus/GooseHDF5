@@ -15,6 +15,7 @@ from typing import Iterator
 import h5py
 import numpy as np
 import prettytable
+import yaml
 from termcolor import colored
 
 from ._version import version  # noqa: F401
@@ -1503,6 +1504,7 @@ def _G5compare_parser():
     parser.add_argument("-d", "--max-depth", type=int, help="Maximum depth to display")
     parser.add_argument("-f", "--fold", action="append", help="Fold paths")
     parser.add_argument("-r", "--renamed", nargs=2, action="append", help="Renamed paths.")
+    parser.add_argument("-R", "--renamed-yaml", type=str, help="YAML file with renamed paths.")
     parser.add_argument("-c", "--colors", default="dark", help="Color theme: dark/light/none")
     parser.add_argument("--table", default="SINGLE_BORDER", help="Table theme")
     parser.add_argument("-v", "--version", action="version", version=version)
@@ -1569,6 +1571,14 @@ def G5compare(args: list[str]):
     for filepath in [args.a, args.b]:
         if not os.path.isfile(filepath):
             raise OSError(f'"{filepath}" does not exist')
+
+    if args.renamed_yaml is not None:
+        with open(args.renamed_yaml) as file:
+            ret = yaml.load(file.read(), Loader=yaml.FullLoader)
+        assert type(ret) is dict
+        if args.renamed is None:
+            args.renamed = []
+        args.renamed += [[key, ret[key]] for key in ret]
 
     with h5py.File(args.a, "r") as a, h5py.File(args.b, "r") as b:
         comp, r_a, r_b = compare_rename(
