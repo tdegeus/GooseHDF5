@@ -18,4 +18,4 @@ with h5py.File("foo.h5", "r") as file:
         g5.copy(file, ret, paths)
         ret["/d/e/f"] = file["/d/e/f"][...] * 2
 
-    print(g5.compare(file, ret, paths))
+        print(g5.compare(file, ret, paths))
