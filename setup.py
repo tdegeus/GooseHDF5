@@ -15,7 +15,7 @@ setup(
     packages=find_packages(),
     use_scm_version={"write_to": f"{project_name}/_version.py"},
     setup_requires=["setuptools_scm"],
-    install_requires=["h5py", "click"],
+    install_requires=["click", "h5py", "prettytable", "pyyaml", "termcolor"],
     entry_points={
         "console_scripts": [
             f"G5check = {project_name}.cli.G5check:main",
