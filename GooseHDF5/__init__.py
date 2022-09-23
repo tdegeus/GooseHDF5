@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import filecmp
 import functools
 import operator
 import os
@@ -9,6 +10,7 @@ import re
 import sys
 import uuid
 import warnings
+from difflib import SequenceMatcher
 from functools import singledispatch
 from typing import Iterator
 
@@ -1507,56 +1509,11 @@ def _G5compare_parser():
     parser.add_argument("-R", "--renamed-yaml", type=str, help="YAML file with renamed paths.")
     parser.add_argument("-c", "--colors", default="dark", help="Color theme: dark/light/none")
     parser.add_argument("--table", default="SINGLE_BORDER", help="Table theme")
+    parser.add_argument("-I", "--input", action="store_true", help="Header identical to input")
     parser.add_argument("-v", "--version", action="version", version=version)
     parser.add_argument("a", help="Path to HDF5-file.")
     parser.add_argument("b", help="Path to HDF5-file.")
     return parser
-
-
-def _truncate_print_path(path: str, n: int) -> str:
-    """
-    Truncate a file path, such that the printed length is smaller than ``n``.
-    For example::
-
-        "/path/to/long/foo/bar" -> "/path/.../bar"
-
-    :param path: Path to truncate.
-    :param n: Maximum length of the path.
-    :return: Truncated path.
-    """
-
-    if len(path) <= n:
-        return path
-
-    path = os.path.abspath(path).split(os.sep)
-    if len(path[0]) == 0:
-        path[0] = os.sep
-
-    length = np.array([len(i) for i in path])
-    incl = np.zeros(len(path), dtype=bool)
-    incl[0] = True
-    incl[-1] = True
-
-    # try including from the back
-    for i in range(1, len(path) - 1)[::-1]:
-        incl[i] = True
-        if np.sum(length[incl]) + np.sum(incl) + 3 > n:
-            incl[i] = False
-            break
-
-    # try including from the front
-    for i in range(1, len(path) - 1):
-        incl[i] = True
-        if np.sum(length[incl]) + np.sum(incl) + 3 > n:
-            incl[i] = False
-            break
-
-    if np.sum(incl) != len(path):
-        i = np.argmin(incl)
-        j = i + np.argmax(incl[i:])
-        path = path[:i] + ["..."] + path[j:]
-
-    return os.path.join(*path)
 
 
 def G5compare(args: list[str]):
@@ -1571,6 +1528,10 @@ def G5compare(args: list[str]):
     for filepath in [args.a, args.b]:
         if not os.path.isfile(filepath):
             raise OSError(f'"{filepath}" does not exist')
+
+    if filecmp.cmp(args.a, args.b):
+        print("Files are identical")
+        return 0
 
     if args.renamed_yaml is not None:
         with open(args.renamed_yaml) as file:
@@ -1593,11 +1554,6 @@ def G5compare(args: list[str]):
             max_depth=args.max_depth,
             list_folded=True,
         )
-
-    def print_path(path):
-        if len(os.path.relpath(path).split("..")) < 3:
-            return os.path.relpath(path)
-        return os.path.abspath(path)
 
     def def_row(arg, colors):
 
@@ -1645,11 +1601,21 @@ def G5compare(args: list[str]):
         print("No differences found")
         return
 
-    file_a = print_path(args.a)
-    file_b = print_path(args.b)
-    n = max(len(row[0]) for row in out.rows)
-    out.field_names = [_truncate_print_path(file_a, n), "", _truncate_print_path(file_b, n)]
+    cols = [args.a, args.b]
 
+    if not args.input:
+        sizes = [max(len(row[0]) for row in out.rows), max(len(row[2]) for row in out.rows)]
+
+        if (len(cols[0]) > sizes[0] or len(cols[1]) > sizes[1]) and (
+            len(cols[0]) + len(cols[1]) > 90
+        ):
+            trial = [os.path.abspath(i) for i in cols]
+            s = SequenceMatcher(None, *trial).get_matching_blocks()[0].size
+            for i in range(2):
+                n = len(trial[i][s:].split(os.sep))
+                cols[i] = os.path.join(*(["..."] + trial[i].split(os.sep)[-n:]))
+
+    out.field_names = [cols[0], "", cols[1]]
     print(out.get_string())
 
 
