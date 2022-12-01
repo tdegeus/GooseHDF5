@@ -1,7 +1,12 @@
+from pathlib import Path
+
 from setuptools import find_packages
 from setuptools import setup
 
 project_name = "GooseHDF5"
+
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 setup(
     name=project_name,
@@ -9,7 +14,7 @@ setup(
     author="Tom de Geus",
     author_email="tom@geus.me",
     description="Wrapper around h5py",
-    long_description="Wrapper around h5py",
+    long_description=long_description,
     keywords="HDF5, h5py",
     url=f"https://github.com/tdegeus/{project_name:s}",
     packages=find_packages(),
