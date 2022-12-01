@@ -703,7 +703,7 @@ def isnumeric(a):
     return False
 
 
-def _equal_value(a, b):
+def _equal_value(a, b, close):
 
     import numpy as np
 
@@ -717,6 +717,8 @@ def _equal_value(a, b):
         return False
 
     if np.issubdtype(a.dtype, np.floating):
+        if close:
+            return np.allclose(a, b)
         if not np.issubdtype(b.dtype, np.floating):
             return False
         if np.allclose(a, b):
@@ -724,6 +726,8 @@ def _equal_value(a, b):
         return False
 
     if np.issubdtype(a.dtype, np.integer):
+        if close:
+            return np.allclose(a, b)
         if not np.issubdtype(b.dtype, np.integer):
             return False
         if np.all(np.equal(a, b)):
@@ -743,10 +747,13 @@ def _equal_value(a, b):
         else:
             return False
 
+    if close:
+        return np.allclose(np.array(list(a[...])), np.array(list(b[...])))
+
     return np.all(np.array(list(a[...])) == np.array(list(b[...])))
 
 
-def _equal(a, b, attrs, matching_dtype, shallow):
+def _equal(a, b, attrs, matching_dtype, shallow, close):
 
     if attrs:
 
@@ -758,7 +765,7 @@ def _equal(a, b, attrs, matching_dtype, shallow):
                     return False
             if shallow:
                 return True
-            if not _equal_value(a.attrs[key], b.attrs[key]):
+            if not _equal_value(a.attrs[key], b.attrs[key], close):
                 return False
 
         for key in b.attrs:
@@ -778,7 +785,7 @@ def _equal(a, b, attrs, matching_dtype, shallow):
     if shallow:
         return True
 
-    return _equal_value(a, b)
+    return _equal_value(a, b, close)
 
 
 def equal(
@@ -790,6 +797,7 @@ def equal(
     attrs: bool = True,
     matching_dtype: bool = False,
     shallow: bool = False,
+    close: bool = False,
 ):
     r"""
     Check that a dataset is equal in both files.
@@ -802,6 +810,7 @@ def equal(
     :param attrs: Compare attributes (the same way at datasets).
     :param matching_dtype: Check that not only the data but also the type matches.
     :param shallow: Check only the presence of the dataset, not its value.
+    :param close: Use ``np.isclose`` also on ``float``-``int`` matches.
     """
 
     if not dest_dataset:
@@ -816,7 +825,7 @@ def equal(
     if dest_dataset not in dest:
         raise OSError(f'"{dest_dataset:s} not in {dest.filename:s}')
 
-    return _equal(source[source_dataset], dest[dest_dataset], attrs, matching_dtype, shallow)
+    return _equal(source[source_dataset], dest[dest_dataset], attrs, matching_dtype, shallow, close)
 
 
 def allequal(
@@ -926,6 +935,7 @@ def compare(
     only_datasets: bool = False,
     fold: str | list[str] = None,
     max_depth: int = None,
+    close: bool = False,
 ) -> dict[list]:
     """
     Compare two files.
@@ -954,6 +964,7 @@ def compare(
     :param max_depth: Set a maximum depth beyond which groups are folded.
     :param fold: Specify groups that are folded.
     :param list_folded: Return folded groups under `"??"`
+    :param close: Use ``np.isclose`` also on ``float``-``int`` matches.
     :return: Dictionary with difference.
     """
     raise NotImplementedError("Overload not found.")
@@ -972,6 +983,7 @@ def _(
     max_depth: int = None,
     fold: str | list[str] = None,
     list_folded: bool = False,
+    close: bool = False,
 ) -> dict[list]:
 
     ret = {"<-": [], "->": [], "!=": [], "==": []}
@@ -989,8 +1001,10 @@ def _(
     for path in not_in_b:
         ret["->"].append(path)
 
+    opts = dict(attrs=attrs, matching_dtype=matching_dtype, shallow=shallow, close=close)
+
     for path in inboth:
-        if not equal(a, b, path, attrs=attrs, matching_dtype=matching_dtype, shallow=shallow):
+        if not equal(a, b, path, **opts):
             ret["!="].append(path)
         else:
             ret["=="].append(path)
@@ -1014,6 +1028,7 @@ def _(
     max_depth: int = None,
     fold: str | list[str] = None,
     list_folded: bool = False,
+    close: bool = False,
 ) -> dict[list]:
 
     with h5py.File(a, "r") as a_file, h5py.File(b, "r") as b_file:
@@ -1029,6 +1044,7 @@ def _(
             max_depth,
             fold,
             list_folded,
+            close,
         )
 
 
@@ -1046,6 +1062,7 @@ def compare_rename(
     max_depth: int = None,
     fold: str | list[str] = None,
     list_folded: bool = False,
+    close: bool = False,
 ) -> dict[list]:
     """
     Compare two files.
@@ -1092,6 +1109,7 @@ def compare_rename(
     :param max_depth: Set a maximum depth beyond which groups are folded.
     :param fold: Specify groups that are folded.
     :param list_folded: Return folded groups under `"??"`
+    :param close: Use ``np.isclose`` also on ``float``-``int`` matches.
     :return: Dictionary with difference.
     """
 
@@ -1102,6 +1120,7 @@ def compare_rename(
         max_depth=max_depth,
         fold=fold,
         list_folded=list_folded,
+        close=close,
     )
 
     if rename is None:
@@ -1498,6 +1517,9 @@ def _G5compare_parser():
         "-t", "--dtype", action="store_true", help="Verify that the type of the datasets match."
     )
     parser.add_argument(
+        "--close", action="store_true", help="Use ``np.isclose`` also on ``float``-``int`` matches."
+    )
+    parser.add_argument(
         "--shallow",
         action="store_true",
         help="Only check for the presence of datasets and attributes. Do not check their values.",
@@ -1553,6 +1575,7 @@ def G5compare(args: list[str]):
             fold=args.fold,
             max_depth=args.max_depth,
             list_folded=True,
+            close=args.close,
         )
 
     def def_row(arg, colors):
