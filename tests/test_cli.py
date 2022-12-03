@@ -6,6 +6,8 @@ import unittest
 import h5py
 import numpy as np
 
+import GooseHDF5 as g5
+
 
 dirname = os.path.join(os.path.abspath(os.path.dirname(__file__)), "mytest")
 
@@ -80,6 +82,30 @@ class MyTests(unittest.TestCase):
             output = sorted(run(["G5list", "-d", str(i), filepath]))
             expected = sorted(["/a", "/b/a", "/b/b/a", "/b/c/d/a", "/c/a", "/d/e/a"])
             self.assertEqual(output, expected)
+
+    def test_G5modify_depth(self):
+        """
+        Simple tests on G5modify
+        """
+
+        filepath = os.path.join(dirname, "a.h5")
+
+        a = np.random.random([3, 2])
+        b = np.random.random([3, 2])
+
+        with h5py.File(filepath, "w") as file:
+            file["/a"] = np.zeros_like(a)
+
+        g5.G5modify([filepath, "a"] + [str(i) for i in a.ravel().tolist()])
+        g5.G5modify(
+            [filepath, "b"]
+            + [str(i) for i in b.ravel().tolist()]
+            + ["--shape=" + ",".join([str(i) for i in b.shape])]
+        )
+
+        with h5py.File(filepath) as file:
+            self.assertTrue(np.allclose(file["a"][...], a))
+            self.assertTrue(np.allclose(file["b"][...], b))
 
 
 if __name__ == "__main__":

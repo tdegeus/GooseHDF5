@@ -1642,6 +1642,55 @@ def G5compare(args: list[str]):
     print(out.get_string())
 
 
+def _G5modify_parser():
+    """
+    Return parser for :py:func:`G5modify`.
+    """
+
+    desc = "Modify a variable."
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument("-v", "--version", action="version", version=version)
+    parser.add_argument(
+        "--shape", type=str, help="Shape of the dataset separated by commas (only for new dataset)."
+    )
+    parser.add_argument(
+        "--dtype", type=str, default="f", help="Data type of the dataset (only for new dataset)."
+    )
+    parser.add_argument("file", help="Filepath of the HDF5-file.")
+    parser.add_argument("path", help="Path in the HDF5-file.")
+    parser.add_argument("values", nargs="*", type=float, help="Values to set.")
+    return parser
+
+
+def G5modify(args: list[str]):
+    """
+    Command-line tool to print datasets from a file, see ``--help``.
+    :param args: Command-line arguments (should be all strings).
+    """
+
+    parser = _G5modify_parser()
+    args = parser.parse_args(args)
+
+    if not os.path.isfile(args.file):
+        raise OSError(f'"{args.file}" does not exist')
+
+    with h5py.File(args.file, "r+") as file:
+
+        if args.path not in file:
+
+            shape = [len(args.values)]
+            if args.shape:
+                shape = [int(i) for i in args.shape.split(",")]
+            assert np.prod(shape) == len(args.values)
+            file.create_dataset(args.path, shape=shape, dtype=args.dtype)
+
+        else:
+
+            assert len(args.values) == file[args.path].size
+
+        file[args.path][:] = np.array(args.values).reshape(file[args.path].shape)
+
+
 def _G5print_cli():
     G5print(sys.argv[1:])
 
@@ -1652,3 +1701,7 @@ def _G5list_cli():
 
 def _G5compare_cli():
     G5compare(sys.argv[1:])
+
+
+def _G5modify_cli():
+    G5modify(sys.argv[1:])
