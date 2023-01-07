@@ -10,7 +10,7 @@ def run(cmd):
     return [i.rstrip().replace("\r", "") for i in out]
 
 
-a = np.random.random(5)
+a = np.random.random(3)
 
 with h5py.File("a.hdf5", "w") as source:
     source["/a"] = a
