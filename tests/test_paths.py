@@ -280,6 +280,15 @@ class Test_iterator(unittest.TestCase):
         self.assertEqual(expected_all_shallow, check_all_shallow)
         self.assertEqual(expected_datasets, check_datasets)
 
+    def test_compare_allow(self):
+
+        a = {"->": [], "<-": [], "==": [], "!=": ["/foo/bar"]}
+        e = {"->": [], "<-": [], "==": [], "!=": []}
+
+        self.assertEqual(g5.compare_allow(a, ["/foo/bar"]), e)
+        self.assertEqual(g5.compare_allow(a, "/foo/bar"), e)
+        self.assertEqual(g5.compare_allow(a, "bar", root="/foo"), e)
+
     def test_compare_fold(self):
         """
         Compare only data that is not ignored because is it too deep or folded.

@@ -923,6 +923,39 @@ def _compare_paths(
     return paths_a, paths_b, fold_a, fold_b
 
 
+def compare_allow(
+    comparison: dict[list], paths: list[str], keys: list[str] = ["->", "<-", "!="], root: str = None
+) -> dict[list]:
+    """
+    Modify the output of :py:func:`compare` to allow specific differences.
+    In practice this removes certain fields from the lists under specific keys in the dictionary.
+
+    :param comparison: The output of :py:func:`compare`.
+    :param paths: List of paths to allow.
+    :param keys: List of comparison keys (``"->"``, ``"<-"``, ``"!="``).
+    :param root: Path prefix for ``paths``.
+    :return: The modified comparison dictionary.
+    """
+
+    ret = comparison.copy()
+
+    if isinstance(paths, str):
+        paths = [paths]
+
+    if isinstance(keys, str):
+        keys = [keys]
+
+    if root is not None:
+        paths = [join(root, path, root=True) for path in paths]
+
+    for key in keys:
+        for path in paths:
+            if path in ret[key]:
+                ret[key].remove(path)
+
+    return ret
+
+
 @singledispatch
 def compare(
     a: str | h5py.File,
