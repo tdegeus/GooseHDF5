@@ -18,12 +18,106 @@ import h5py
 import numpy as np
 import prettytable
 import yaml
+from numpy.typing import ArrayLike
 from termcolor import colored
 
 from ._version import version  # noqa: F401
 from ._version import version_tuple  # noqa: F401
 
 warnings.filterwarnings("ignore")
+
+
+class ExtendableList:
+    """
+    Write extendable list to HDF5 file.
+
+    :param file: Opened HDF5 file (in write mode).
+    :param key: Path to the dataset.
+    :param dtype: Data-type to use.
+    :param chunk: Chunk size.
+    :param kwargs: An optional dictionary with attributes.
+    """
+
+    def __init__(self, file: h5py.File, key: str, dtype, chunk: int = 1000, **kwargs):
+
+        assert key not in file
+
+        self.chunk = chunk
+        self.dset = file.create_dataset(key, (0,), maxshape=(None,), dtype=dtype)
+        self.data = []
+
+        for attr in kwargs:
+            self.dset.attrs[attr] = kwargs[attr]
+
+        self.dset.parent.file.flush()
+
+    def _flush(self):
+        """
+        Flush the buffer if the chunk is full (it is allowed to overflow).
+        """
+
+        if len(self.data) >= self.chunk:
+            self.flush()
+
+    def flush(self):
+        """
+        Flush the buffer.
+        """
+
+        if len(self.data) > 0:
+            n = len(self.data)
+            self.dset.resize((self.dset.size + n,))
+            self.dset[-n:] = self.data
+            self.data = []
+
+        self.dset.parent.file.flush()
+
+    def __add__(self, data: ArrayLike):
+
+        if isinstance(data, list):
+            self.data += data
+            self._flush()
+            return self
+
+        if isinstance(data, np.ndarray):
+            self.data += data.tolist()
+            self._flush()
+            return self
+
+    def append(self, data: int | float):
+
+        self.data.append(data)
+        self._flush()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return self.flush()
+
+
+def create_extendible(file: h5py.File, key: str, dtype, ndim: int = 1, **kwargs) -> h5py.Dataset:
+    """
+    Create extendible dataset.
+
+    :param file: Opened HDF5 file.
+    :param key: Path to the dataset.
+    :param dtype: Data-type to use.
+    :param ndim: Number of dimensions.
+    :param kwargs: An optional dictionary with attributes.
+    """
+
+    if key in file:
+        return file[key]
+
+    shape = tuple(0 for i in range(ndim))
+    maxshape = tuple(None for i in range(ndim))
+    dset = file.create_dataset(key, shape, maxshape=maxshape, dtype=dtype)
+
+    for attr in kwargs:
+        dset.attrs[attr] = kwargs[attr]
+
+    return dset
 
 
 def _dict_iterategroups(data: dict, root: str = "/"):
