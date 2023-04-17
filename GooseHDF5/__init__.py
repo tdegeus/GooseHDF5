@@ -214,10 +214,7 @@ def getdatapaths(
     fold_symbol: str = "/...",
 ) -> list[str]:
     """
-    Get paths to all:
-
-    -   Datasets, and
-    -   Groups that contain attributes.
+    Get paths to all dataset and groups that contain attributes.
 
     .. warning::
 
