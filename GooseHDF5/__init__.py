@@ -20,6 +20,7 @@ import prettytable
 import yaml
 from numpy.typing import ArrayLike
 from termcolor import colored
+from typing_extensions import deprecated
 
 from ._version import version  # noqa: F401
 from ._version import version_tuple  # noqa: F401
@@ -635,9 +636,14 @@ def _create_groups(file, paths):
             file.create_group(group)
 
 
-def _copy(source, dest, source_paths, dest_paths, expand_soft):
+def _copy(
+    source: h5py.File, dest: h5py.File, source_paths: list[str], dest_paths: list[str], **opts
+):
     """
     Copy paths recursively.
+    :param opts:
+        `h5py.Group.copy <https://docs.h5py.org/en/stable/high/group.html#h5py.Group.copy>`_
+        options (except ``name``)
     """
 
     if len(source_paths) == 0:
@@ -651,14 +657,8 @@ def _copy(source, dest, source_paths, dest_paths, expand_soft):
         if dest_path in dest:
             continue
 
-        if not expand_soft:
-            link = source.get(source_path, getlink=True)
-            if isinstance(link, h5py.SoftLink):
-                dest[dest_path] = h5py.SoftLink(link.path)
-                continue
-
         group = posixpath.split(dest_path)[0]
-        source.copy(source_path, dest[group], posixpath.split(dest_path)[1])
+        source.copy(source_path, dest[group], posixpath.split(dest_path)[1], **opts)
 
 
 def _copy_attrs(source, dest, source_paths, dest_paths, expand_soft):
@@ -696,7 +696,7 @@ def copy(
     source_root: str = None,
     recursive: bool = True,
     skip: bool = False,
-    expand_soft: bool = True,
+    **opts,
 ):
     """
     Copy groups/datasets from one HDF5-archive ``source`` to another HDF5-archive ``dest``.
@@ -713,9 +713,9 @@ def copy(
     :param source_root: Path prefix for all ``source_datasets``.
     :param recursive: If the source is a group, copy all objects within that group recursively.
     :param skip: Skip datasets that are not present in source.
-    :param expand_soft:
-        If True: create a copy of the source dataset.
-        If False: create a link (with identical path as in the source).
+    :param opts:
+        `h5py.Group.copy <https://docs.h5py.org/en/stable/high/group.html#h5py.Group.copy>`_
+        options (except ``name``).
     """
 
     if len(source_datasets) == 0:
@@ -757,22 +757,18 @@ def copy(
     isgroup = np.array([isinstance(source[path], h5py.Group) for path in source_datasets])
 
     if recursive:
-        _copy(
-            source, dest, source_datasets[isgroup], dest_datasets[isgroup], expand_soft=expand_soft
-        )
+        _copy(source, dest, source_datasets[isgroup], dest_datasets[isgroup], **opts)
 
     _copy(
         source,
         dest,
         source_datasets[np.logical_not(isgroup)],
         dest_datasets[np.logical_not(isgroup)],
-        expand_soft=expand_soft,
+        **opts,
     )
 
     if not recursive:
-        _copy_attrs(
-            source, dest, source_datasets[isgroup], dest_datasets[isgroup], expand_soft=expand_soft
-        )
+        _copy_attrs(source, dest, source_datasets[isgroup], dest_datasets[isgroup], **opts)
 
 
 def isnumeric(a):
@@ -805,6 +801,9 @@ def _equal_value(a, b, close):
             return False
 
     if a.size != b.size:
+        return False
+
+    if list(a.shape) != list(b.shape):
         return False
 
     if np.issubdtype(a.dtype, np.floating):
@@ -1302,6 +1301,7 @@ def compare_rename(
     return ret, ret_a, ret_b
 
 
+@deprecated("Use GooseHDF5.copy. If used for compression please submit an issue.")
 def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
     r"""
     Copy a dataset from one file to another. This function also copies possible attributes.
