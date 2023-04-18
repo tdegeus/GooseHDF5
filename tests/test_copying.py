@@ -30,11 +30,9 @@ class Test_itereator(unittest.TestCase):
         shutil.rmtree(basedir)
 
     def test_copy_plain(self):
-
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
         with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
-
             for d in datasets:
                 source[d] = np.random.rand(10)
 
@@ -52,7 +50,6 @@ class Test_itereator(unittest.TestCase):
         links = ["/mylink/a", "/mylink/b/foo", "/mylink/c/d/foo"]
 
         with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
-
             for link, d in zip(links, datasets):
                 source[d] = np.random.rand(10)
                 source[link] = h5py.SoftLink(d)
@@ -75,7 +72,6 @@ class Test_itereator(unittest.TestCase):
         links = ["/mylink/a", "/mylink/b/foo", "/mylink/c/d/foo"]
 
         with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
-
             for link, d in zip(links, datasets):
                 source[d] = np.random.rand(10)
                 source[link] = h5py.SoftLink(d)
@@ -90,11 +86,9 @@ class Test_itereator(unittest.TestCase):
                 self.assertIsInstance(dest.get(path, getlink=True), h5py.SoftLink)
 
     def test_copy_skip(self):
-
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
         with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
-
             for d in datasets:
                 source[d] = np.random.rand(10)
 
@@ -104,11 +98,9 @@ class Test_itereator(unittest.TestCase):
                 self.assertTrue(g5.equal(source, dest, path))
 
     def test_copy_shallow(self):
-
         datasets = ["/a", "/b/foo", "/b/bar", "/c/d/foo"]
 
         with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
-
             for d in datasets:
                 source[d] = np.random.rand(10)
 
@@ -129,7 +121,6 @@ class Test_itereator(unittest.TestCase):
         datasets = ["/a", "/b/foo", "/b/bar", "/c/d/foo"]
 
         with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
-
             for d in datasets:
                 source[d] = np.random.rand(10)
 
@@ -139,11 +130,9 @@ class Test_itereator(unittest.TestCase):
                 self.assertTrue(g5.equal(source, dest, path))
 
     def test_copy_attrs(self):
-
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
         with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
-
             for d in datasets:
                 source[d] = np.random.rand(10)
 
@@ -157,11 +146,9 @@ class Test_itereator(unittest.TestCase):
                 self.assertTrue(g5.equal(source, dest, path))
 
     def test_copy_groupattrs(self):
-
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
         with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
-
             for d in datasets:
                 source[d] = np.random.rand(10)
 
@@ -174,13 +161,11 @@ class Test_itereator(unittest.TestCase):
                 self.assertTrue(g5.equal(source, dest, path))
 
     def test_copy_root(self):
-
         datasets = ["/a", "/b/foo", "/c/d/foo"]
         source_pre = "/my/source"
         dest_pre = "/your/dest"
 
         with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
-
             for d in datasets:
                 source[g5.join(source_pre, d)] = np.random.rand(10)
 
@@ -193,5 +178,4 @@ class Test_itereator(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

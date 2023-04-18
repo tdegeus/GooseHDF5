@@ -42,7 +42,6 @@ def check_isfile(fname):
 
 
 def read(filename, check):
-
     with h5py.File(filename, "r") as source:
         paths = getdatapaths(source)
         if check:
@@ -50,7 +49,6 @@ def read(filename, check):
 
 
 def main():
-
     try:
 
         class Parser(argparse.ArgumentParser):
@@ -67,11 +65,9 @@ def main():
         read(args.source, not args.basic)
 
     except Exception as e:
-
         print(e)
         return 1
 
 
 if __name__ == "__main__":
-
     main()

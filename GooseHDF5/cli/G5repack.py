@@ -46,7 +46,6 @@ def check_isfile(fname):
 
 
 def main():
-
     try:
 
         class Parser(argparse.ArgumentParser):
@@ -63,7 +62,6 @@ def main():
         tempname = next(tempfile._get_candidate_names())
 
         for filename in args.source:
-
             print(filename)
 
             check_isfile(filename)
@@ -75,11 +73,9 @@ def main():
             os.replace(tempname, filename)
 
     except Exception as e:
-
         print(e)
         return 1
 
 
 if __name__ == "__main__":
-
     main()

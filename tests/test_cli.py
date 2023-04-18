@@ -22,13 +22,11 @@ class MyTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-
         if not os.path.isdir(dirname):
             os.makedirs(dirname)
 
     @classmethod
     def tearDownClass(self):
-
         shutil.rmtree(dirname)
 
     def test_G5list(self):
@@ -109,5 +107,4 @@ class MyTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

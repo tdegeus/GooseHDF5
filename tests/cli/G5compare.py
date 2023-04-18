@@ -13,7 +13,6 @@ def run(cmd):
 
 with h5py.File("a.hdf5", "w") as source:
     with h5py.File("b.hdf5", "w") as other:
-
         # NumPy array
 
         a = np.random.random(25)

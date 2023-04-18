@@ -30,11 +30,9 @@ class Test_iterator(unittest.TestCase):
         shutil.rmtree(basedir)
 
     def test_getdatasets(self):
-
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
         with h5py.File(basedir / "foo.h5", "w") as file:
-
             for d in datasets:
                 file[d] = [0, 1, 2]
 
@@ -45,11 +43,9 @@ class Test_iterator(unittest.TestCase):
         self.assertEqual(sorted([datasets[-1]]), sorted(paths_c))
 
     def test_getdatasets_fold(self):
-
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
         with h5py.File(basedir / "foo.h5", "w") as file:
-
             for d in datasets:
                 file[d] = [0, 1, 2]
 
@@ -60,11 +56,9 @@ class Test_iterator(unittest.TestCase):
             self.assertEqual(paths, sorted(["/a", "/b/foo", "/c"]))
 
     def test_getgroups(self):
-
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
         with h5py.File(basedir / "foo.h5", "w") as file:
-
             for d in datasets:
                 file[d] = [0, 1, 2]
 
@@ -72,11 +66,9 @@ class Test_iterator(unittest.TestCase):
             self.assertEqual(g5.getgroups(file, root="/c"), ["/c/d"])
 
     def test_getgroups_attrs(self):
-
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
         with h5py.File(basedir / "foo.h5", "w") as file:
-
             for d in datasets:
                 file[d] = [0, 1, 2]
 
@@ -93,7 +85,6 @@ class Test_iterator(unittest.TestCase):
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
         with h5py.File(basedir / "foo.h5", "w") as file:
-
             for d in datasets:
                 file[d] = [0, 1, 2]
 
@@ -101,7 +92,6 @@ class Test_iterator(unittest.TestCase):
             meta.attrs["version"] = 0
 
             for symbol in ["/...", ""]:
-
                 paths = g5.getgroups(file, fold="/meta", fold_symbol=symbol, has_attrs=True)
                 self.assertEqual(paths, ["/meta" + symbol])
 
@@ -109,9 +99,7 @@ class Test_iterator(unittest.TestCase):
                 self.assertEqual(paths, ["/meta" + symbol])
 
     def test_compare(self):
-
         with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as other:
-
             # NumPy array
 
             a = np.random.random(25)
@@ -281,7 +269,6 @@ class Test_iterator(unittest.TestCase):
         self.assertEqual(expected_datasets, check_datasets)
 
     def test_compare_allow(self):
-
         a = {"->": [], "<-": [], "==": [], "!=": ["/foo/bar"]}
         e = {"->": [], "<-": [], "==": [], "!=": []}
 
@@ -295,7 +282,6 @@ class Test_iterator(unittest.TestCase):
         """
 
         with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as other:
-
             a = np.random.random(25)
 
             source["/equal/at/some/depth"] = a
@@ -314,5 +300,4 @@ class Test_iterator(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

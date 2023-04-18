@@ -47,7 +47,6 @@ def check_isfile(fname):
 
 
 def main():
-
     try:
 
         class Parser(argparse.ArgumentParser):
@@ -68,18 +67,15 @@ def main():
                 sys.exit(1)
 
         with h5py.File(args.source, "r") as source:
-
             paths = verify(source, getdatapaths(source))
 
             with h5py.File(args.destination, "w") as dest:
                 copy(source, dest, paths)
 
     except Exception as e:
-
         print(e)
         return 1
 
 
 if __name__ == "__main__":
-
     main()

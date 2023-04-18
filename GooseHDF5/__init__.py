@@ -40,7 +40,6 @@ class ExtendableList:
     """
 
     def __init__(self, file: h5py.File, key: str, dtype, chunk: int = 1000, **kwargs):
-
         assert key not in file
 
         self.chunk = chunk
@@ -74,7 +73,6 @@ class ExtendableList:
         self.dset.parent.file.flush()
 
     def __add__(self, data: ArrayLike):
-
         if isinstance(data, list):
             self.data += data
             self._flush()
@@ -86,7 +84,6 @@ class ExtendableList:
             return self
 
     def append(self, data: int | float):
-
         self.data.append(data)
         self._flush()
 
@@ -131,7 +128,6 @@ def _dict_iterategroups(data: dict, root: str = "/"):
     """
 
     for key in data.keys():
-
         item = data[key]
         path = join(root, key)
 
@@ -383,9 +379,7 @@ def _getpaths(file, root):
     # ---------------------------------------------
 
     def iterator(g, prefix):
-
         for key in g.keys():
-
             item = g[key]
             path = join(prefix, key)
 
@@ -413,9 +407,7 @@ def _getpaths_maxdepth(file, root, max_depth, fold_symbol):
     # ---------------------------------------------
 
     def iterator(g, prefix, max_depth):
-
         for key in g.keys():
-
             item = g[key]
             path = join(prefix, key)
 
@@ -452,9 +444,7 @@ def _getpaths_fold(file, root, fold, fold_symbol):
     # ---------------------------------------------
 
     def iterator(g, prefix, fold):
-
         for key in g.keys():
-
             item = g[key]
             path = join(prefix, key)
 
@@ -489,9 +479,7 @@ def _getpaths_fold_maxdepth(file, root, fold, max_depth, fold_symbol):
     # ---------------------------------------------
 
     def iterator(g, prefix, fold, max_depth):
-
         for key in g.keys():
-
             item = g[key]
             path = join(prefix, key)
 
@@ -555,7 +543,6 @@ def verify(file, datasets, error=False):
     ret = []
 
     for path in datasets:
-
         try:
             file[path][...]
         except:  # noqa: E722
@@ -772,7 +759,6 @@ def isnumeric(a):
 
 
 def _equal_value(a, b, close):
-
     import numpy as np
 
     if type(a) == str:
@@ -825,9 +811,7 @@ def _equal_value(a, b, close):
 
 
 def _equal(a, b, attrs, matching_dtype, shallow, close):
-
     if attrs:
-
         for key in a.attrs:
             if key not in b.attrs:
                 return False
@@ -978,7 +962,6 @@ def _compare_paths(
             paths_b = list(getdatasets(b, max_depth=max_depth, fold=fold, fold_symbol=symbol))
 
     if fold:
-
         fold = [join(f, symbol, root=True) for f in fold]
 
         for path in paths_a:
@@ -1089,7 +1072,6 @@ def _(
     list_folded: bool = False,
     close: bool = False,
 ) -> dict[list]:
-
     ret = {"<-": [], "->": [], "!=": [], "==": []}
     paths_a, paths_b, fold_a, fold_b = _compare_paths(
         a, b, paths_a, paths_b, False if only_datasets else attrs, max_depth, fold
@@ -1134,7 +1116,6 @@ def _(
     list_folded: bool = False,
     close: bool = False,
 ) -> dict[list]:
-
     with h5py.File(a, "r") as a_file, h5py.File(b, "r") as b_file:
         return compare(
             a_file,
@@ -1301,7 +1282,6 @@ def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
         paths = list(paths)
 
     for path in paths:
-
         data = source[path][...]
 
         if data.size == 1 or not compress or not isnumeric(data):
@@ -1318,7 +1298,6 @@ def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
 
 
 def _linktype2str(source: h5py.File | h5py.Group, path: str) -> str:
-
     dset = source.get(path, getlink=True)
 
     if isinstance(dset, h5py.SoftLink):
@@ -1415,7 +1394,6 @@ def print_attribute(source, paths: list[str]):
 
     for path in paths:
         if path in source:
-
             data = source[path]
 
             print(f'"{path}"')
@@ -1472,7 +1450,6 @@ def G5print(args: list[str]):
         np.set_printoptions(threshold=sys.maxsize)
 
     with h5py.File(args.source, "r") as source:
-
         if len(args.dataset) == 0:
             print_header = True
             datasets = list(
@@ -1500,7 +1477,6 @@ def G5print(args: list[str]):
                 return 1
 
         for i, dataset in enumerate(datasets):
-
             data = source[dataset]
 
             if args.info:
@@ -1574,7 +1550,6 @@ def G5list(args: list[str]):
         raise OSError(f'"{args.source}" does not exist')
 
     with h5py.File(args.source, "r") as source:
-
         if args.layer is not None:
             paths = sorted(join(args.layer, i, root=True) for i in source[args.layer])
         else:
@@ -1684,7 +1659,6 @@ def G5compare(args: list[str]):
         )
 
     def def_row(arg, colors):
-
         if colors == "none":
             if arg[1] == "!=":
                 return arg
@@ -1780,9 +1754,7 @@ def G5modify(args: list[str]):
         raise OSError(f'"{args.file}" does not exist')
 
     with h5py.File(args.file, "r+") as file:
-
         if args.path not in file:
-
             shape = [len(args.values)]
             if args.shape:
                 shape = [int(i) for i in args.shape.split(",")]
@@ -1790,7 +1762,6 @@ def G5modify(args: list[str]):
             file.create_dataset(args.path, shape=shape, dtype=args.dtype)
 
         else:
-
             assert len(args.values) == file[args.path].size
 
         file[args.path][:] = np.array(args.values).reshape(file[args.path].shape)
