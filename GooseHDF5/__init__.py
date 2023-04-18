@@ -636,139 +636,120 @@ def _create_groups(file, paths):
             file.create_group(group)
 
 
-def _copy(
-    source: h5py.File, dest: h5py.File, source_paths: list[str], dest_paths: list[str], **opts
+def copy(
+    source: h5py.File,
+    dest: h5py.File,
+    source_paths: list[str],
+    dest_paths: list[str] = None,
+    root: str = None,
+    source_root: str = None,
+    skip: bool = False,
+    preserve_soft: bool = False,
+    shallow: bool = False,
+    expand_soft: bool = False,
+    expand_external: bool = False,
+    expand_refs: bool = False,
+    without_attrs: bool = False,
 ):
     """
-    Copy paths recursively.
-    :param opts:
-        `h5py.Group.copy <https://docs.h5py.org/en/stable/high/group.html#h5py.Group.copy>`_
-        options (except ``name``)
+    Copy groups/datasets from one HDF5-archive ``source`` to another HDF5-archive ``dest``.
+    The datasets can be renamed by specifying a list of ``dest_paths``
+    (whose entries should correspond to the ``source_paths``).
+    In addition, a ``root`` path prefix can be specified for the destination datasets.
+    Likewise, a ``source_root`` path prefix can be specified for the source datasets.
+
+    For the options ``shallow``, ``expand_soft``, ``expand_external``, ``expand_refs``,
+    ``without_attrs`` see:
+    `h5py.Group.copy <https://docs.h5py.org/en/stable/high/group.html#h5py.Group.copy>`_.
+
+    :param source: The source HDF5-archive.
+    :param dest: The destination HDF5-archive.
+    :param source_paths: List of dataset-paths in ``source``.
+    :param dest_paths: List of dataset-paths in ``dest``, defaults to ``source_paths``.
+    :param root: Path prefix for all ``dest_paths``.
+    :param source_root: Path prefix for all ``source_paths``.
+    :param skip: Skip datasets that are not present in source.
+    :param preserve_soft: Preserve soft links.
+    :param shallow: Only copy immediate members of a group.
+    :param expand_soft: Expand soft links into new objects.
+    :param expand_external: Expand external links into new objects.
+    :param expand_refs: Copy objects which are pointed to by references.
+    :param without_attrs: Copy object(s) without copying HDF5 attributes.
     """
 
     if len(source_paths) == 0:
-        return 0
+        return
 
-    _create_groups(dest, dest_paths)
+    if type(source_paths) is str:
+        source_paths = [source_paths]
+    if type(dest_paths) is str:
+        dest_paths = [dest_paths]
 
-    for source_path, dest_path in zip(source_paths, dest_paths):
-        # skip paths that were already recursively copied
-        # (main function checks existence before, so this can be the only reason)
-        if dest_path in dest:
-            continue
+    source_paths = np.array([abspath(path) for path in source_paths])
 
-        group = posixpath.split(dest_path)[0]
-        source.copy(source_path, dest[group], posixpath.split(dest_path)[1], **opts)
+    if not dest_paths:
+        dest_paths = source_paths.copy()
+    else:
+        dest_paths = np.array([abspath(path) for path in dest_paths])
 
+    if skip:
+        keep = [i in source for i in source_paths]
+        source_paths = source_paths[keep]
+        dest_paths = dest_paths[keep]
 
-def _copy_attrs(source, dest, source_paths, dest_paths, expand_soft):
+    if root:
+        root = abspath(root)
+        dest_paths = np.array([join(root, path) for path in dest_paths])
+
+    if source_root:
+        source_root = abspath(source_root)
+        source_paths = np.array([join(source_root, path) for path in source_paths])
+
+    for path in source_paths:
+        if path not in source:
+            raise OSError(f'Dataset "{path}" does not exists in source.')
+
+    for path in dest_paths:
+        if path in dest:
+            raise OSError(f'Dataset "{path}" already exists in dest.')
 
     if len(source_paths) == 0:
         return 0
 
     _create_groups(dest, dest_paths)
+    isgroup = np.array([isinstance(source[path], h5py.Group) for path in source_paths])
+    keep = np.ones(len(source_paths), dtype=bool)
+    if shallow:
+        keep[isgroup] = False
 
-    for source_path, dest_path in zip(source_paths, dest_paths):
-
-        if not expand_soft:
+    for source_path, dest_path in zip(source_paths[keep], dest_paths[keep]):
+        if dest_path in dest:
+            continue
+        if preserve_soft:
             link = source.get(source_path, getlink=True)
             if isinstance(link, h5py.SoftLink):
                 dest[dest_path] = h5py.SoftLink(link.path)
                 continue
+        group = posixpath.split(dest_path)[0]
+        source.copy(
+            source=source_path,
+            dest=dest[group],
+            name=posixpath.split(dest_path)[1],
+            shallow=shallow,
+            expand_soft=expand_soft,
+            expand_external=expand_external,
+            expand_refs=expand_refs,
+            without_attrs=without_attrs,
+        )
 
-        source_group = source[source_path]
-
+    for source_path, dest_path in zip(source_paths[isgroup], dest_paths[isgroup]):
         if dest_path not in dest:
             dest_group = dest.create_group(dest_path)
         else:
             dest_group = dest[dest_path]
-
+        source_group = source[source_path]
         for key in source_group.attrs:
             dest_group.attrs[key] = source_group.attrs[key]
-
-
-def copy(
-    source: h5py.File,
-    dest: h5py.File,
-    source_datasets: list[str],
-    dest_datasets: list[str] = None,
-    root: str = None,
-    source_root: str = None,
-    recursive: bool = True,
-    skip: bool = False,
-    **opts,
-):
-    """
-    Copy groups/datasets from one HDF5-archive ``source`` to another HDF5-archive ``dest``.
-    The datasets can be renamed by specifying a list of ``dest_datasets``
-    (whose entries should correspond to the ``source_datasets``).
-    In addition, a ``root`` path prefix can be specified for the destination datasets.
-    Likewise, a ``source_root`` path prefix can be specified for the source datasets.
-
-    :param source: The source HDF5-archive.
-    :param dest: The destination HDF5-archive.
-    :param source_datasets: List of dataset-paths in ``source``.
-    :param dest_datasets: List of dataset-paths in ``dest``, defaults to ``source_datasets``.
-    :param root: Path prefix for all ``dest_datasets``.
-    :param source_root: Path prefix for all ``source_datasets``.
-    :param recursive: If the source is a group, copy all objects within that group recursively.
-    :param skip: Skip datasets that are not present in source.
-    :param opts:
-        `h5py.Group.copy <https://docs.h5py.org/en/stable/high/group.html#h5py.Group.copy>`_
-        options (except ``name``).
-    """
-
-    if len(source_datasets) == 0:
-        return
-
-    if type(source_datasets) is str:
-        source_datasets = [source_datasets]
-    if type(dest_datasets) is str:
-        dest_datasets = [dest_datasets]
-
-    source_datasets = np.array([abspath(path) for path in source_datasets])
-
-    if not dest_datasets:
-        dest_datasets = source_datasets.copy()
-    else:
-        dest_datasets = np.array([abspath(path) for path in dest_datasets])
-
-    if skip:
-        keep = [i in source for i in source_datasets]
-        source_datasets = source_datasets[keep]
-        dest_datasets = dest_datasets[keep]
-
-    if root:
-        root = abspath(root)
-        dest_datasets = np.array([join(root, path) for path in dest_datasets])
-
-    if source_root:
-        source_root = abspath(source_root)
-        source_datasets = np.array([join(source_root, path) for path in source_datasets])
-
-    for path in source_datasets:
-        if path not in source:
-            raise OSError(f'Dataset "{path}" does not exists in source.')
-
-    for path in dest_datasets:
-        if path in dest:
-            raise OSError(f'Dataset "{path}" already exists in dest.')
-
-    isgroup = np.array([isinstance(source[path], h5py.Group) for path in source_datasets])
-
-    if recursive:
-        _copy(source, dest, source_datasets[isgroup], dest_datasets[isgroup], **opts)
-
-    _copy(
-        source,
-        dest,
-        source_datasets[np.logical_not(isgroup)],
-        dest_datasets[np.logical_not(isgroup)],
-        **opts,
-    )
-
-    if not recursive:
-        _copy_attrs(source, dest, source_datasets[isgroup], dest_datasets[isgroup], **opts)
 
 
 def isnumeric(a):

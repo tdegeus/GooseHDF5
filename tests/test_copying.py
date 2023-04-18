@@ -56,7 +56,7 @@ class Test_itereator(unittest.TestCase):
                     source[d] = np.random.rand(10)
                     source[link] = h5py.SoftLink(d)
 
-                g5.copy(source, dest, datasets + links, expand_soft=False)
+                g5.copy(source, dest, datasets + links, preserve_soft=True)
 
                 for path in datasets + links:
                     self.assertTrue(g5.equal(source, dest, path))
@@ -70,19 +70,18 @@ class Test_itereator(unittest.TestCase):
         datasets = ["/a", "/b/foo", "/c/d/foo"]
         links = ["/mylink/a", "/mylink/b/foo", "/mylink/c/d/foo"]
 
-        with h5py.File(basedir / "foo_1.h5", "w") as source:
-            with h5py.File(basedir / "bar_1.h5", "w") as dest:
+        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
 
-                for link, d in zip(links, datasets):
-                    source[d] = np.random.rand(10)
-                    source[link] = h5py.SoftLink(d)
+            for link, d in zip(links, datasets):
+                source[d] = np.random.rand(10)
+                source[link] = h5py.SoftLink(d)
 
-                g5.copy(source, dest, datasets + links)
+            g5.copy(source, dest, datasets + links)
 
-                for path in datasets + links:
-                    self.assertTrue(g5.equal(source, dest, path))
-                for path in datasets + links:
-                    self.assertNotIsInstance(dest.get(path, getlink=True), h5py.SoftLink)
+            for path in datasets + links:
+                self.assertTrue(g5.equal(source, dest, path))
+            for path in datasets + links:
+                self.assertNotIsInstance(dest.get(path, getlink=True), h5py.SoftLink)
 
     def test_copy_skip(self):
 
@@ -99,24 +98,23 @@ class Test_itereator(unittest.TestCase):
                 for path in datasets:
                     self.assertTrue(g5.equal(source, dest, path))
 
-    def test_copy_nonrecursive(self):
+    def test_copy_shallow(self):
 
         datasets = ["/a", "/b/foo", "/b/bar", "/c/d/foo"]
 
-        with h5py.File(basedir / "foo_1.h5", "w") as source:
-            with h5py.File(basedir / "bar_1.h5", "w") as dest:
+        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
 
-                for d in datasets:
-                    source[d] = np.random.rand(10)
+            for d in datasets:
+                source[d] = np.random.rand(10)
 
-                g5.copy(source, dest, ["/a", "/b", "/c/d/foo"], recursive=False)
+            g5.copy(source, dest, ["/a", "/b", "/c/d/foo"], shallow=True)
 
-                for path in ["/a", "/c/d/foo"]:
-                    self.assertTrue(g5.equal(source, dest, path))
+            for path in ["/a", "/c/d/foo"]:
+                self.assertTrue(g5.equal(source, dest, path))
 
-                self.assertTrue(g5.exists(dest, "/b"))
-                self.assertFalse(g5.exists(dest, "/b/foo"))
-                self.assertFalse(g5.exists(dest, "/b/bar"))
+            self.assertTrue(g5.exists(dest, "/b"))
+            self.assertFalse(g5.exists(dest, "/b/foo"))
+            self.assertFalse(g5.exists(dest, "/b/bar"))
 
     def test_copy_recursive(self):
 
