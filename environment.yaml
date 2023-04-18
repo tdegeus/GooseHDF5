@@ -11,4 +11,4 @@ dependencies:
 - sphinx
 - sphinx-argparse
 - termcolor
-- typing_extensions >=4.5.0
+- typing-extensions >=4.5.0
