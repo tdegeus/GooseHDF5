@@ -43,10 +43,6 @@ class Test_iterator(unittest.TestCase):
 
 
 class Test_ExtendableList(unittest.TestCase):
-    """
-    Test the extendable list class
-    """
-
     @classmethod
     def setUpClass(self):
         testdir.mkdir(exist_ok=True)
@@ -74,6 +70,41 @@ class Test_ExtendableList(unittest.TestCase):
                     dset += d
 
             self.assertTrue(np.allclose(data.ravel(), file["foo"][...]))
+
+    def test_existing(self):
+        dataset = np.random.random([10, 100])
+
+        with h5py.File(testdir / "foo.h5", "w") as file:
+            for data in dataset:
+                with g5.ExtendableList(file, "foo", data.dtype, chunk=9) as dset:
+                    for d in data:
+                        dset.append(d)
+
+            self.assertTrue(np.allclose(dataset.ravel(), file["foo"][...]))
+
+
+class Test_ExtendableSlice(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        testdir.mkdir(exist_ok=True)
+
+    @classmethod
+    def tearDownClass(self):
+        shutil.rmtree(testdir)
+
+    def test_add(self):
+        data = np.random.random([6, 10, 10])
+
+        with h5py.File(testdir / "foo.h5", "w") as file:
+            with g5.ExtendableSlice(file, "foo", data.shape[1:], data.dtype) as dset:
+                for d in data[:3, ...]:
+                    dset += d
+
+            with g5.ExtendableSlice(file, "foo") as dset:
+                for d in data[3:, ...]:
+                    dset += d
+
+            self.assertTrue(np.allclose(data, file["foo"][...]))
 
 
 if __name__ == "__main__":

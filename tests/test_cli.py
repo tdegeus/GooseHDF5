@@ -95,11 +95,11 @@ class MyTests(unittest.TestCase):
             file["/a"] = np.zeros_like(a)
 
         g5.G5modify([filepath, "a"] + [str(i) for i in a.ravel().tolist()])
-        g5.G5modify(
-            [filepath, "b"]
-            + [str(i) for i in b.ravel().tolist()]
-            + ["--shape=" + ",".join([str(i) for i in b.shape])]
-        )
+
+        args = [filepath, "b"]
+        args += [str(i) for i in b.ravel().tolist()]
+        args += ["--shape=" + ",".join([str(i) for i in b.shape])]
+        g5.G5modify(args)
 
         with h5py.File(filepath) as file:
             self.assertTrue(np.allclose(file["a"][...], a))
