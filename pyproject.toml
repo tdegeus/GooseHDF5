@@ -12,13 +12,10 @@ readme = "README.md"
 requires-python = ">=3.6"
 
 [project.scripts]
-G5check = "GooseHDF5.cli.G5check:main"
 G5compare = "GooseHDF5:_G5compare_cli"
 G5list = "GooseHDF5:_G5list_cli"
 G5modify = "GooseHDF5:_G5modify_cli"
 G5print = "GooseHDF5:_G5print_cli"
-G5repack = "GooseHDF5.cli.G5repack:main"
-G5repair = "GooseHDF5.cli.G5repair:main"
 
 [project.urls]
 Source = "https://github.com/tdegeus/GooseHDF5"
