@@ -5,9 +5,11 @@ dependencies:
 - furo
 - h5py
 - numpy
+- pre-commit
 - prettytable
 - python
 - pyyaml
+- setuptools_scm
 - sphinx
 - sphinx-argparse
 - termcolor
