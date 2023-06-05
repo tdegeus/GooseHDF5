@@ -1,6 +1,7 @@
 import os
 import pathlib
 import shutil
+import tempfile
 import unittest
 
 import h5py
@@ -9,30 +10,24 @@ import numpy as np
 import GooseHDF5 as g5
 
 
-basedir = pathlib.Path(__file__).parent / "mytest"
-
-
 class Test_itereator(unittest.TestCase):
     """ """
 
     @classmethod
     def setUpClass(self):
-        """
-        Create a temporary directory for the test files.
-        """
-        os.makedirs(basedir, exist_ok=True)
+        self.origin = pathlib.Path().absolute()
+        self.tempdir = tempfile.mkdtemp()
+        os.chdir(self.tempdir)
 
     @classmethod
     def tearDownClass(self):
-        """
-        Remove the temporary directory.
-        """
-        shutil.rmtree(basedir)
+        os.chdir(self.origin)
+        shutil.rmtree(self.tempdir)
 
     def test_copy_plain(self):
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
-        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
+        with h5py.File("a.h5", "w") as source, h5py.File("b.h5", "w") as dest:
             for d in datasets:
                 source[d] = np.random.rand(10)
 
@@ -49,7 +44,7 @@ class Test_itereator(unittest.TestCase):
         datasets = ["/a", "/b/foo", "/c/d/foo"]
         links = ["/mylink/a", "/mylink/b/foo", "/mylink/c/d/foo"]
 
-        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
+        with h5py.File("a.h5", "w") as source, h5py.File("b.h5", "w") as dest:
             for link, d in zip(links, datasets):
                 source[d] = np.random.rand(10)
                 source[link] = h5py.SoftLink(d)
@@ -71,7 +66,7 @@ class Test_itereator(unittest.TestCase):
         datasets = ["/a", "/b/foo", "/c/d/foo"]
         links = ["/mylink/a", "/mylink/b/foo", "/mylink/c/d/foo"]
 
-        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
+        with h5py.File("a.h5", "w") as source, h5py.File("b.h5", "w") as dest:
             for link, d in zip(links, datasets):
                 source[d] = np.random.rand(10)
                 source[link] = h5py.SoftLink(d)
@@ -88,7 +83,7 @@ class Test_itereator(unittest.TestCase):
     def test_copy_skip(self):
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
-        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
+        with h5py.File("a.h5", "w") as source, h5py.File("b.h5", "w") as dest:
             for d in datasets:
                 source[d] = np.random.rand(10)
 
@@ -100,7 +95,7 @@ class Test_itereator(unittest.TestCase):
     def test_copy_shallow(self):
         datasets = ["/a", "/b/foo", "/b/bar", "/c/d/foo"]
 
-        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
+        with h5py.File("a.h5", "w") as source, h5py.File("b.h5", "w") as dest:
             for d in datasets:
                 source[d] = np.random.rand(10)
 
@@ -120,7 +115,7 @@ class Test_itereator(unittest.TestCase):
 
         datasets = ["/a", "/b/foo", "/b/bar", "/c/d/foo"]
 
-        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
+        with h5py.File("a.h5", "w") as source, h5py.File("b.h5", "w") as dest:
             for d in datasets:
                 source[d] = np.random.rand(10)
 
@@ -132,7 +127,7 @@ class Test_itereator(unittest.TestCase):
     def test_copy_attrs(self):
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
-        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
+        with h5py.File("a.h5", "w") as source, h5py.File("b.h5", "w") as dest:
             for d in datasets:
                 source[d] = np.random.rand(10)
 
@@ -148,7 +143,7 @@ class Test_itereator(unittest.TestCase):
     def test_copy_groupattrs(self):
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
-        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
+        with h5py.File("a.h5", "w") as source, h5py.File("b.h5", "w") as dest:
             for d in datasets:
                 source[d] = np.random.rand(10)
 
@@ -165,7 +160,7 @@ class Test_itereator(unittest.TestCase):
         source_pre = "/my/source"
         dest_pre = "/your/dest"
 
-        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as dest:
+        with h5py.File("a.h5", "w") as source, h5py.File("b.h5", "w") as dest:
             for d in datasets:
                 source[g5.join(source_pre, d)] = np.random.rand(10)
 
