@@ -28,23 +28,120 @@ from ._version import version_tuple  # noqa: F401
 warnings.filterwarnings("ignore")
 
 
+class ExtendableSlice:
+    """
+    Write slices of an extendable dataset to HDF5 file.
+
+    For example::
+
+        dataset = np.random.random([100, 10, 10])
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableSlice(file, "foo", (10, 10), np.float64) as dset:
+                for i in range(dataset.shape[0]):
+                    dset += dataset[i, ...]
+
+    :param file: Opened HDF5 file (in write mode).
+    :param key: Path to the dataset.
+    :param shape: Shape of each slice.
+    :param dtype: Data-type to use (needed for new datasets).
+    :param chunk: Chunk size: flush after this many slices.
+    :param kwargs: An optional dictionary with attributes.
+    """
+
+    def __init__(
+        self,
+        file: h5py.File,
+        key: str,
+        shape: tuple[int, ...] = None,
+        dtype=None,
+        chunk: int = 1,
+        **kwargs,
+    ):
+        if key in file:
+            self.dset = file[key]
+            self.shape = self.dset.shape[1:]
+            if shape is not None:
+                assert np.all(np.equal(shape, self.shape)), "shape mismatch"
+        else:
+            assert dtype is not None, "dtype must be specified for new datasets"
+            self.dset = file.create_dataset(
+                key, (0,) + shape, maxshape=(None,) + shape, dtype=dtype
+            )
+            self.shape = shape
+
+        for attr in kwargs:
+            self.dset.attrs[attr] = kwargs[attr]
+
+        self.chunk = chunk
+        self.data = np.empty((self.chunk,) + self.shape, dtype=dtype)
+        self.i = 0
+        self.dset.parent.file.flush()
+
+    def _flush(self):
+        """
+        Flush the buffer if the chunk is full (it is allowed to overflow).
+        """
+
+        if self.i == self.chunk:
+            self.flush()
+
+    def flush(self):
+        """
+        Flush the buffer.
+        """
+
+        if self.i > 0:
+            self.dset.resize((self.dset.shape[0] + self.i,) + self.shape)
+            self.dset[-self.i :, ...] = self.data[: self.i, ...]
+            self.i = 0
+
+        self.dset.parent.file.flush()
+
+    def __add__(self, data: ArrayLike):
+        assert data.shape == self.shape
+        self.data[self.i, ...] = data
+        self.i += 1
+        self._flush()
+        return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return self.flush()
+
+
 class ExtendableList:
     """
     Write extendable list to HDF5 file.
 
+    For example::
+
+        data = np.random.random([100])
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableList(file, "foo", np.float64) as dset:
+                for d in data:
+                    dset.append(d)
+
     :param file: Opened HDF5 file (in write mode).
     :param key: Path to the dataset.
-    :param dtype: Data-type to use.
-    :param chunk: Chunk size.
+    :param dtype: Data-type to use (needed for new datasets).
+    :param chunk: Chunk size: flush after this many entries.
     :param kwargs: An optional dictionary with attributes.
     """
 
-    def __init__(self, file: h5py.File, key: str, dtype, chunk: int = 1000, **kwargs):
-        assert key not in file
-
+    def __init__(self, file: h5py.File, key: str, dtype=None, chunk: int = 1000, **kwargs):
         self.chunk = chunk
-        self.dset = file.create_dataset(key, (0,), maxshape=(None,), dtype=dtype)
-        self.data = []
+        self.data = np.empty(chunk, dtype=dtype)
+        self.i = 0
+
+        if key in file:
+            self.dset = file[key]
+        else:
+            assert dtype is not None, "dtype must be specified for new datasets"
+            self.dset = file.create_dataset(key, (0,), maxshape=(None,), dtype=dtype)
 
         for attr in kwargs:
             self.dset.attrs[attr] = kwargs[attr]
@@ -56,7 +153,7 @@ class ExtendableList:
         Flush the buffer if the chunk is full (it is allowed to overflow).
         """
 
-        if len(self.data) >= self.chunk:
+        if self.i == self.chunk:
             self.flush()
 
     def flush(self):
@@ -64,27 +161,23 @@ class ExtendableList:
         Flush the buffer.
         """
 
-        if len(self.data) > 0:
-            n = len(self.data)
-            self.dset.resize((self.dset.size + n,))
-            self.dset[-n:] = self.data
-            self.data = []
+        if self.i > 0:
+            self.dset.resize((self.dset.size + self.i,))
+            self.dset[-self.i :] = self.data[: self.i]
+            self.i = 0
 
         self.dset.parent.file.flush()
 
     def __add__(self, data: ArrayLike):
-        if isinstance(data, list):
-            self.data += data
-            self._flush()
-            return self
-
-        if isinstance(data, np.ndarray):
-            self.data += data.tolist()
+        if isinstance(data, list) or isinstance(data, np.ndarray):
+            self.data = np.concatenate([self.data[: self.i], data])
+            self.i = self.data.size
             self._flush()
             return self
 
     def append(self, data: int | float):
-        self.data.append(data)
+        self.data[self.i] = data
+        self.i += 1
         self._flush()
 
     def __enter__(self):
