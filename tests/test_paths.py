@@ -1,6 +1,7 @@
 import os
 import pathlib
 import shutil
+import tempfile
 import unittest
 
 import h5py
@@ -9,30 +10,24 @@ import numpy as np
 import GooseHDF5 as g5
 
 
-basedir = pathlib.Path(__file__).parent / "mytest"
-
-
 class Test_iterator(unittest.TestCase):
     """ """
 
     @classmethod
     def setUpClass(self):
-        """
-        Create a temporary directory for the test files.
-        """
-        os.makedirs(basedir, exist_ok=True)
+        self.origin = pathlib.Path().absolute()
+        self.tempdir = tempfile.mkdtemp()
+        os.chdir(self.tempdir)
 
     @classmethod
     def tearDownClass(self):
-        """
-        Remove the temporary directory.
-        """
-        shutil.rmtree(basedir)
+        os.chdir(self.origin)
+        shutil.rmtree(self.tempdir)
 
     def test_getdatasets(self):
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
-        with h5py.File(basedir / "foo.h5", "w") as file:
+        with h5py.File("foo.h5", "w") as file:
             for d in datasets:
                 file[d] = [0, 1, 2]
 
@@ -45,7 +40,7 @@ class Test_iterator(unittest.TestCase):
     def test_getdatasets_fold(self):
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
-        with h5py.File(basedir / "foo.h5", "w") as file:
+        with h5py.File("foo.h5", "w") as file:
             for d in datasets:
                 file[d] = [0, 1, 2]
 
@@ -58,7 +53,7 @@ class Test_iterator(unittest.TestCase):
     def test_getgroups(self):
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
-        with h5py.File(basedir / "foo.h5", "w") as file:
+        with h5py.File("foo.h5", "w") as file:
             for d in datasets:
                 file[d] = [0, 1, 2]
 
@@ -68,7 +63,7 @@ class Test_iterator(unittest.TestCase):
     def test_getgroups_attrs(self):
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
-        with h5py.File(basedir / "foo.h5", "w") as file:
+        with h5py.File("foo.h5", "w") as file:
             for d in datasets:
                 file[d] = [0, 1, 2]
 
@@ -84,7 +79,7 @@ class Test_iterator(unittest.TestCase):
 
         datasets = ["/a", "/b/foo", "/c/d/foo"]
 
-        with h5py.File(basedir / "foo.h5", "w") as file:
+        with h5py.File("foo.h5", "w") as file:
             for d in datasets:
                 file[d] = [0, 1, 2]
 
@@ -99,7 +94,7 @@ class Test_iterator(unittest.TestCase):
                 self.assertEqual(paths, ["/meta" + symbol])
 
     def test_compare(self):
-        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as other:
+        with h5py.File("a.h5", "w") as source, h5py.File("b.h5", "w") as other:
             # NumPy array
 
             a = np.random.random(25)
@@ -281,7 +276,7 @@ class Test_iterator(unittest.TestCase):
         Compare only data that is not ignored because is it too deep or folded.
         """
 
-        with h5py.File(basedir / "a.h5", "w") as source, h5py.File(basedir / "b.h5", "w") as other:
+        with h5py.File("a.h5", "w") as source, h5py.File("b.h5", "w") as other:
             a = np.random.random(25)
 
             source["/equal/at/some/depth"] = a
