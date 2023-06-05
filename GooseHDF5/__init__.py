@@ -60,21 +60,21 @@ class ExtendableSlice:
     ):
         if key in file:
             self.dset = file[key]
-            self.shape = self.dset.shape[1:]
+            self.shape = list(self.dset.shape[1:])
             if shape is not None:
                 assert np.all(np.equal(shape, self.shape)), "shape mismatch"
         else:
             assert dtype is not None, "dtype must be specified for new datasets"
+            self.shape = list(shape)
             self.dset = file.create_dataset(
-                key, (0,) + shape, maxshape=(None,) + shape, dtype=dtype
+                key, [0] + self.shape, maxshape=[None] + self.shape, dtype=dtype
             )
-            self.shape = shape
 
         for attr in kwargs:
             self.dset.attrs[attr] = kwargs[attr]
 
         self.chunk = chunk
-        self.data = np.empty((self.chunk,) + self.shape, dtype=dtype)
+        self.data = np.empty([self.chunk] + self.shape, dtype=dtype)
         self.i = 0
         self.dset.parent.file.flush()
 
@@ -92,14 +92,14 @@ class ExtendableSlice:
         """
 
         if self.i > 0:
-            self.dset.resize((self.dset.shape[0] + self.i,) + self.shape)
+            self.dset.resize([self.dset.shape[0] + self.i] + self.shape)
             self.dset[-self.i :, ...] = self.data[: self.i, ...]
             self.i = 0
 
         self.dset.parent.file.flush()
 
     def __add__(self, data: ArrayLike):
-        assert data.shape == self.shape
+        assert np.all(np.equal(data.shape, self.shape)), "shape mismatch"
         self.data[self.i, ...] = data
         self.i += 1
         self._flush()
