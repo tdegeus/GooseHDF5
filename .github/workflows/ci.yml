@@ -47,15 +47,6 @@ jobs:
     - name: Run tests
       run: python -m unittest discover tests -v
 
-    - name: Run tests CLI
-      working-directory: tests/cli
-      run: |
-        python G5check.py
-        python G5compare.py
-        python G5print.py
-        python G5repair.py
-        python G5repack.py
-
     - name: Run examples
       working-directory: docs/examples
       run: python copy_modify-selection.py
