@@ -33,6 +33,7 @@ jobs:
       run: |
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         echo "SETUPTOOLS_SCM_PRETEND_VERSION=$LATEST_TAG" >> $GITHUB_ENV
+        echo "SETUPTOOLS_SCM_PRETEND_VERSION=$LATEST_TAG"
 
     - name: Set conda environment
       uses: mamba-org/provision-with-micromamba@main
