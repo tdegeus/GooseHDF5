@@ -35,11 +35,11 @@ repos:
   - id: autoflake
     args: [--in-place, --remove-unused-variable]
 - repo: https://github.com/asottile/reorder_python_imports
-  rev: v3.9.0
+  rev: v3.10.0
   hooks:
   - id: reorder-python-imports
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.4.0
+  rev: v3.7.0
   hooks:
   - id: pyupgrade
     args: [--py36-plus]

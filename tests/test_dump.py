@@ -101,6 +101,23 @@ class Test_Extendable(unittest.TestCase):
 
             self.assertTrue(np.allclose(data, file["foo"][...]))
 
+    def test_ExtendableSlice_maxshape(self):
+        data = np.random.random([6, 10, 10])
+        add = np.random.random([6, 10, 3])
+        total = np.concatenate([data, add], axis=2)
+        shape = data.shape[1:]
+        maxshape = [None, None]
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableSlice(file, "foo", shape, data.dtype, maxshape=maxshape) as dset:
+                for d in data:
+                    dset += d
+
+            file["foo"].resize(total.shape)
+            file["foo"][..., data.shape[-1] :] = add
+
+            self.assertTrue(np.allclose(total, file["foo"][...]))
+
 
 if __name__ == "__main__":
     unittest.main()
