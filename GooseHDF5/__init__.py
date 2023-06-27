@@ -42,32 +42,42 @@ class ExtendableSlice:
                     dset += dataset[i, ...]
 
     :param file: Opened HDF5 file (in write mode).
-    :param key: Path to the dataset.
-    :param shape: Shape of each slice.
+    :param name: Path to the dataset.
+    :param shape: Shape of all dimensions >= 1. The shape of dimension 0 is dynamic.
     :param dtype: Data-type to use (needed for new datasets).
     :param chunk: Chunk size: flush after this many slices.
+    :param maxshape: Maximum shape of all dimensions >= 1. Default: same as ``shape``.
     :param kwargs: An optional dictionary with attributes.
     """
 
     def __init__(
         self,
         file: h5py.File,
-        key: str,
+        name: str,
         shape: tuple[int, ...] = None,
         dtype=None,
         chunk: int = 1,
+        maxshape: tuple[int, ...] = None,
         **kwargs,
     ):
-        if key in file:
-            self.dset = file[key]
+        if maxshape is None:
+            maxshape = shape
+
+        if name in file:
+            self.dset = file[name]
             self.shape = list(self.dset.shape[1:])
             if shape is not None:
                 assert np.all(np.equal(shape, self.shape)), "shape mismatch"
+            if maxshape is not None:
+                assert list(self.dset.maxshape) == [None] + list(maxshape), "maxshape mismatch"
+            else:
+                assert self.dset.maxshape[0] is None, "maxshape mismatch"
         else:
             assert dtype is not None, "dtype must be specified for new datasets"
+            assert shape is not None, "shape must be specified for new datasets"
             self.shape = list(shape)
             self.dset = file.create_dataset(
-                key, [0] + self.shape, maxshape=[None] + [None for _ in shape], dtype=dtype
+                name=name, shape=[0] + self.shape, maxshape=[None] + list(maxshape), dtype=dtype
             )
 
         for attr in kwargs:
