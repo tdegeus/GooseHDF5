@@ -67,7 +67,7 @@ class ExtendableSlice:
             assert dtype is not None, "dtype must be specified for new datasets"
             self.shape = list(shape)
             self.dset = file.create_dataset(
-                key, [0] + self.shape, maxshape=[None] + self.shape, dtype=dtype
+                key, [0] + self.shape, maxshape=[None] + [None for _ in shape], dtype=dtype
             )
 
         for attr in kwargs:
