@@ -63,8 +63,16 @@ class Test_Extendable(unittest.TestCase):
             with g5.ExtendableList(file, "foo", data.dtype, chunk=9) as dset:
                 for d in data:
                     dset.append(d)
-
             self.assertTrue(np.allclose(data, file["foo"][...]))
+
+    def test_ExtendableList_append_list(self):
+        data = np.random.random([10, 10])
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableList(file, "foo", data.dtype, chunk=9) as dset:
+                for d in data:
+                    dset.append(d)
+            self.assertTrue(np.allclose(data.ravel(), file["foo"][...]))
 
     def test_ExtendableList_add(self):
         data = np.random.random([10, 10])
@@ -73,8 +81,50 @@ class Test_Extendable(unittest.TestCase):
             with g5.ExtendableList(file, "foo", data.dtype, chunk=9) as dset:
                 for d in data:
                     dset += d
-
             self.assertTrue(np.allclose(data.ravel(), file["foo"][...]))
+
+    def test_ExtendableList_setitem(self):
+        data = np.random.random([100])
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableList(file, "foo", data.dtype) as dset:
+                dset[30:] = data[30:]
+            self.assertEqual(file["foo"].shape, (100,))
+            self.assertTrue(np.allclose(data[30:], file["foo"][30:]))
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableList(file, "foo", data.dtype) as dset:
+                dset[10:20] = data[10:20]
+            self.assertEqual(file["foo"].shape, (20,))
+            self.assertTrue(np.allclose(data[10:20], file["foo"][10:20]))
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableList(file, "foo", data.dtype) as dset:
+                dset[10:20:2] = data[10:20:2]
+            self.assertEqual(file["foo"].shape, (20,))
+            self.assertTrue(np.allclose(data[10:20:2], file["foo"][10:20:2]))
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableList(file, "foo", data.dtype) as dset:
+                dset[10::2] = data[10:20:2]
+            self.assertEqual(file["foo"].shape, (20,))
+            self.assertTrue(np.allclose(data[10:20:2], file["foo"][10:20:2]))
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableList(file, "foo", data.dtype) as dset:
+                dset[:] = data[:10]
+            self.assertEqual(file["foo"].shape, (10,))
+            self.assertTrue(np.allclose(data[:10], file["foo"][...]))
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableList(file, "foo", data.dtype) as dset:
+                dset[:] = data[:10]
+                dset[10:20] = data[10:20]
+                dset[20:30:2] = data[20:30:2]
+                dset[21:30:2] = data[21:30:2]
+                dset[30:] = data[30:]
+            self.assertEqual(file["foo"].shape, data.shape)
+            self.assertTrue(np.allclose(data, file["foo"][...]))
 
     def test_ExtendableList_existing(self):
         dataset = np.random.random([10, 100])
@@ -84,8 +134,33 @@ class Test_Extendable(unittest.TestCase):
                 with g5.ExtendableList(file, "foo", data.dtype, chunk=9) as dset:
                     for d in data:
                         dset.append(d)
-
             self.assertTrue(np.allclose(dataset.ravel(), file["foo"][...]))
+
+    def test_ExtendableSlice_append(self):
+        data = np.random.random([6, 10, 10])
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableSlice(file, "foo", data.shape[1:], data.dtype) as dset:
+                for d in data:
+                    dset.append(d)
+            self.assertTrue(np.allclose(data, file["foo"][...]))
+
+    def test_ExtendableSlice_setitem(self):
+        data = np.random.random([6, 10, 10])
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableSlice(file, "foo", data.shape[1:], data.dtype) as dset:
+                for i in range(data.shape[0]):
+                    dset[i] = data[i]
+            self.assertTrue(np.allclose(data, file["foo"][...]))
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableSlice(file, "foo", data.shape[1:], data.dtype) as dset:
+                pass
+            with g5.ExtendableSlice(file, "foo") as dset:
+                for i in range(data.shape[0]):
+                    dset[i] = data[i]
+            self.assertTrue(np.allclose(data, file["foo"][...]))
 
     def test_ExtendableSlice_add(self):
         data = np.random.random([6, 10, 10])
@@ -94,11 +169,9 @@ class Test_Extendable(unittest.TestCase):
             with g5.ExtendableSlice(file, "foo", data.shape[1:], data.dtype) as dset:
                 for d in data[:3, ...]:
                     dset += d
-
             with g5.ExtendableSlice(file, "foo") as dset:
                 for d in data[3:, ...]:
                     dset += d
-
             self.assertTrue(np.allclose(data, file["foo"][...]))
 
     def test_ExtendableSlice_maxshape(self):
@@ -111,11 +184,9 @@ class Test_Extendable(unittest.TestCase):
         with h5py.File("foo.h5", "w") as file:
             with g5.ExtendableSlice(file, "foo", shape, data.dtype, maxshape=maxshape) as dset:
                 for d in data:
-                    dset += d
-
+                    dset.append(d)
             file["foo"].resize(total.shape)
             file["foo"][..., data.shape[-1] :] = add
-
             self.assertTrue(np.allclose(total, file["foo"][...]))
 
 
