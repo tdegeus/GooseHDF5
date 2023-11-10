@@ -975,7 +975,7 @@ def isnumeric(a):
 
     import numpy as np
 
-    if type(a) == str:
+    if isinstance(a, str):
         return False
 
     if np.issubdtype(a.dtype, np.number):
@@ -987,8 +987,8 @@ def isnumeric(a):
 def _equal_value(a, b, close):
     import numpy as np
 
-    if type(a) == str:
-        if type(b) == str:
+    if isinstance(a, str):
+        if isinstance(b, str):
             return a == b
         else:
             return False
@@ -1165,7 +1165,7 @@ def _compare_paths(
     """
 
     if fold:
-        if type(fold) is str:
+        if isinstance(fold, str):
             fold = [fold]
 
     symbol = "/..." + str(uuid.uuid4())
@@ -1504,7 +1504,7 @@ def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
     :param bool double_to_float: Convert doubles to floats before copying.
     """
 
-    if type(paths) != list:
+    if not isinstance(paths, list):
         paths = list(paths)
 
     for path in paths:
