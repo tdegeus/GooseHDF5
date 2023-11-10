@@ -34,19 +34,25 @@ class ExtendableSlice:
 
     For example::
 
-        dataset = np.random.random([100, 10, 10])
+        n = 100
+        shape = [10, 10]
+        dataset = np.random.random([n] + shape)
 
         with h5py.File("foo.h5", "w") as file:
-            with g5.ExtendableSlice(file, "foo", (10, 10), np.float64) as dset:
-                for i in range(dataset.shape[0]):
-                    dset += dataset[i, ...]
+            with g5.ExtendableSlice(file, "foo", shape, np.float64) as dset:
+                for i in range(n):
+                    dset.append(dataset[i, ...])  # one can also use ``dset += dataset[i, ...]``
 
     :param file: Opened HDF5 file (in write mode).
     :param name: Path to the dataset.
-    :param shape: Shape of all dimensions >= 1. The shape of dimension 0 is dynamic.
-    :param dtype: Data-type to use (needed for new datasets).
+    :param shape:
+        Shape of the slice (only new dataset).
+        The shape of the dataset is ``[None] + shape`` (``None`` is the extendable dimension).
+    :param dtype: Data-type to use (only new dataset).
     :param chunk: Chunk size: flush after this many slices.
-    :param maxshape: Maximum shape of all dimensions >= 1. Default: same as ``shape``.
+    :param maxshape:
+        Maximum shape of all dimensions >= 1 (only new dataset).
+        Default: same as ``shape``.
     :param kwargs: An optional dictionary with attributes.
     """
 
@@ -88,31 +94,77 @@ class ExtendableSlice:
         self.i = 0
         self.dset.parent.file.flush()
 
-    def _flush(self):
+    def _flush_full_buffer(self):
         """
-        Flush the buffer if the chunk is full (it is allowed to overflow).
+        Flush the buffer if the chunk is full.
         """
-
         if self.i == self.chunk:
-            self.flush()
+            return self.flush()
+        return self
 
     def flush(self):
         """
         Flush the buffer.
         """
-
         if self.i > 0:
             self.dset.resize([self.dset.shape[0] + self.i] + self.shape)
             self.dset[-self.i :, ...] = self.data[: self.i, ...]
             self.i = 0
+            self.dset.parent.file.flush()
+        return self
 
-        self.dset.parent.file.flush()
+    def append(self, data: ArrayLike):
+        """
+        Add new slice to the dataset.
 
-    def __add__(self, data: ArrayLike):
+        .. note::
+
+            If a buffer is used, the data may not be written to the dataset immediately.
+            The data is only written to the dataset when the buffer is full.
+            At that point, the file is flushed.
+
+            In other cases,
+            the data is directly written to the dataset and the file is flushed immediately.
+
+        :param data: The "slice" to append.
+        """
         assert np.all(np.equal(data.shape, self.shape)), "shape mismatch"
         self.data[self.i, ...] = data
         self.i += 1
-        self._flush()
+        return self._flush_full_buffer()
+
+    def __add__(self, data: ArrayLike):
+        return self.append(data)
+
+    def __setitem__(self, index: tuple, data: ArrayLike):
+        """
+        Overwrite a slice of the dataset.
+
+        .. note::
+
+            This immediately writes to the dataset and flushes the file.
+
+        :param index: The index of the slice.
+        :param data: The "slice" to append.
+        """
+        assert np.all(np.equal(data.shape, self.shape)), "shape mismatch"
+        self.flush()
+
+        if np.isscalar(index):
+            idx = index
+        else:
+            idx = index[0]
+
+        if idx < 0:
+            self.dset[index] = data
+            self.dset.parent.file.flush()
+            return self
+
+        if idx >= self.dset.shape[0]:
+            self.dset.resize([idx + 1] + self.shape)
+
+        self.dset[index] = data
+        self.dset.parent.file.flush()
         return self
 
     def __enter__(self):
@@ -137,7 +189,7 @@ class ExtendableList:
 
     :param file: Opened HDF5 file (in write mode).
     :param key: Path to the dataset.
-    :param dtype: Data-type to use (needed for new datasets).
+    :param dtype: Data-type to use (only new dataset).
     :param chunk: Chunk size: flush after this many entries.
     :param kwargs: An optional dictionary with attributes.
     """
@@ -158,37 +210,108 @@ class ExtendableList:
 
         self.dset.parent.file.flush()
 
-    def _flush(self):
+    def _flush_full_buffer(self):
         """
-        Flush the buffer if the chunk is full (it is allowed to overflow).
+        Flush the buffer if the chunk is full.
         """
-
         if self.i == self.chunk:
-            self.flush()
+            return self.flush()
+        return self
 
     def flush(self):
         """
         Flush the buffer.
         """
-
         if self.i > 0:
             self.dset.resize((self.dset.size + self.i,))
             self.dset[-self.i :] = self.data[: self.i]
             self.i = 0
+            self.dset.parent.file.flush()
+        return self
 
-        self.dset.parent.file.flush()
+    def append(self, data: int | float | ArrayLike):
+        """
+        Add new entry or slice to the dataset.
 
-    def __add__(self, data: ArrayLike):
+        .. note::
+
+            If a list or array is appended the data is directly written to the dataset.
+            The file and buffer are flushed immediately.
+
+            In other cases, the data is first written to a buffer.
+            The data is only written to the dataset when the buffer is full.
+            At that point, the file is flushed.
+
+        :param data: The data to append.
+        """
         if isinstance(data, list) or isinstance(data, np.ndarray):
-            self.data = np.concatenate([self.data[: self.i], data])
-            self.i = self.data.size
-            self._flush()
+            self.flush()
+            n = len(data)
+            self.dset.resize((self.dset.size + n,))
+            self.dset[-n:] = data
+            self.dset.parent.file.flush()
             return self
 
-    def append(self, data: int | float):
         self.data[self.i] = data
         self.i += 1
-        self._flush()
+        return self._flush_full_buffer()
+
+    def __add__(self, data: ArrayLike):
+        return self.append(data)
+
+    def __setitem__(self, index: tuple, data: ArrayLike):
+        """
+        Overwrite and item or a slice of the dataset.
+
+        .. note::
+
+            This immediately writes to the dataset and flushes the file.
+
+        :param index: The index of the item of the slice.
+        :param data: A value or a "slice" of data.
+        """
+        self.flush()
+
+        if isinstance(index, slice):
+            size = None
+            start = index.start
+            stop = index.stop
+            step = index.step
+            if step is None:
+                step = 1
+
+            if start is None and stop is None:
+                size = data.size * step
+            else:
+                if stop is None:
+                    stop = start + data.size * step
+                if start is None:
+                    start = stop - data.size * step
+                if start > 0 and stop > 0:
+                    size = stop
+
+            if size is not None:
+                assert self.dset.size <= size, "cannot shrink dataset"
+                if self.dset.size < size:
+                    self.dset.resize((size,))
+            self.dset[index] = data
+            self.dset.parent.file.flush()
+            return self
+
+        if isinstance(index, Ellipsis):
+            assert self.dset.size <= data.size, "cannot shrink dataset"
+            if self.dset.size < data.size:
+                self.dset.resize((data.size,))
+            self.dset[index] = data
+            self.dset.parent.file.flush()
+            return self
+
+        assert np.isscalar(index), "index must be scalar or slice"
+        if index >= self.dset.size:
+            self.dset.resize((index + 1,))
+        self.dset[index] = data
+        self.dset.parent.file.flush()
+        return self
 
     def __enter__(self):
         return self
