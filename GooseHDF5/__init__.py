@@ -298,7 +298,7 @@ class ExtendableList:
             self.dset.parent.file.flush()
             return self
 
-        if isinstance(index, Ellipsis):
+        if index is Ellipsis:
             assert self.dset.size <= data.size, "cannot shrink dataset"
             if self.dset.size < data.size:
                 self.dset.resize((data.size,))

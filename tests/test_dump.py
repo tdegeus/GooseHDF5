@@ -88,6 +88,26 @@ class Test_Extendable(unittest.TestCase):
 
         with h5py.File("foo.h5", "w") as file:
             with g5.ExtendableList(file, "foo", data.dtype) as dset:
+                dset[0] = data[0]
+            self.assertEqual(file["foo"].shape, (1,))
+            self.assertTrue(np.allclose(data[0], file["foo"][0]))
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableList(file, "foo", data.dtype) as dset:
+                dset[2] = data[2]
+            self.assertEqual(file["foo"].shape, (3,))
+            self.assertTrue(np.allclose(data[2], file["foo"][2]))
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableList(file, "foo", data.dtype) as dset:
+                dset[0] = data[0]
+                dset[1] = data[1]
+                dset[2] = data[2]
+            self.assertEqual(file["foo"].shape, (3,))
+            self.assertTrue(np.allclose(data[:3], file["foo"][:3]))
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableList(file, "foo", data.dtype) as dset:
                 dset[30:] = data[30:]
             self.assertEqual(file["foo"].shape, (100,))
             self.assertTrue(np.allclose(data[30:], file["foo"][30:]))
@@ -113,6 +133,12 @@ class Test_Extendable(unittest.TestCase):
         with h5py.File("foo.h5", "w") as file:
             with g5.ExtendableList(file, "foo", data.dtype) as dset:
                 dset[:] = data[:10]
+            self.assertEqual(file["foo"].shape, (10,))
+            self.assertTrue(np.allclose(data[:10], file["foo"][...]))
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableList(file, "foo", data.dtype) as dset:
+                dset[...] = data[:10]
             self.assertEqual(file["foo"].shape, (10,))
             self.assertTrue(np.allclose(data[:10], file["foo"][...]))
 
