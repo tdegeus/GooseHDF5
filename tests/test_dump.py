@@ -56,6 +56,13 @@ class Test_Extendable(unittest.TestCase):
         os.chdir(self.origin)
         shutil.rmtree(self.tempdir)
 
+    def test_ExtendableList_nocontext(self):
+        data = np.random.random([100])
+
+        with h5py.File("foo.h5", "w") as file:
+            g5.ExtendableList(file, "foo", data.dtype).append(data[0]).flush()
+            self.assertTrue(np.allclose(data[0], file["foo"][...]))
+
     def test_ExtendableList_append(self):
         data = np.random.random([100])
 
