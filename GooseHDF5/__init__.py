@@ -136,7 +136,7 @@ class ExtendableSlice:
     def __add__(self, data: ArrayLike):
         return self.append(data)
 
-    def __setitem__(self, index: tuple, data: ArrayLike):
+    def setitem(self, index, data: ArrayLike):
         """
         Overwrite a slice of the dataset.
 
@@ -167,11 +167,14 @@ class ExtendableSlice:
         self.dset.parent.file.flush()
         return self
 
+    def __setitem__(self, index, data: ArrayLike):
+        return self.setitem(index, data)
+
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
-        return self.flush()
+        self.flush()
 
 
 class ExtendableList:
@@ -259,7 +262,7 @@ class ExtendableList:
     def __add__(self, data: ArrayLike):
         return self.append(data)
 
-    def __setitem__(self, index: tuple, data: ArrayLike):
+    def setitem(self, index, data: ArrayLike):
         """
         Overwrite and item or a slice of the dataset.
 
@@ -313,11 +316,14 @@ class ExtendableList:
         self.dset.parent.file.flush()
         return self
 
+    def __setitem__(self, index, data: ArrayLike):
+        return self.setitem(index, data)
+
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
-        return self.flush()
+        self.flush()
 
 
 def create_extendible(file: h5py.File, key: str, dtype, ndim: int = 1, **kwargs) -> h5py.Dataset:
