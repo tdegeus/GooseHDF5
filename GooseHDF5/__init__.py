@@ -1380,7 +1380,7 @@ def compare_rename(
     fold: str | list[str] = None,
     list_folded: bool = False,
     close: bool = False,
-) -> dict[list]:
+) -> tuple[dict[list], dict[list], dict[list]]:
     """
     Compare two files.
     Return three dictionaries with differences::
