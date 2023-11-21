@@ -96,7 +96,7 @@ class ExtendableSlice:
 
         if attrs is not None:
             for attr in attrs:
-                self.dset.attrs[attr] = kwargs[attr]
+                self.dset.attrs[attr] = attrs[attr]
 
         self.dset.parent.file.flush()
 
@@ -203,7 +203,7 @@ class ExtendableList:
 
         if attrs is not None:
             for attr in attrs:
-                self.dset.attrs[attr] = kwargs[attr]
+                self.dset.attrs[attr] = attrs[attr]
 
         self.dset.parent.file.flush()
 
