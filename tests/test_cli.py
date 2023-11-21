@@ -107,13 +107,13 @@ class MyTests(unittest.TestCase):
 
             # single number
 
-            b = float(np.random.random(1))
+            b = np.random.random(1)[0]
 
             source["/b/equal"] = b
             source["/b/not_equal"] = b
 
             other["/b/equal"] = b
-            other["/b/not_equal"] = float(np.random.random(1))
+            other["/b/not_equal"] = np.random.random(1)[0]
 
             # string
 
