@@ -67,7 +67,7 @@ class Test_Extendable(unittest.TestCase):
         data = np.random.random([100])
 
         with h5py.File("foo.h5", "w") as file:
-            with g5.ExtendableList(file, "foo", data.dtype, chunk=9) as dset:
+            with g5.ExtendableList(file, "foo", data.dtype, buffer=9) as dset:
                 for d in data:
                     dset.append(d)
             self.assertTrue(np.allclose(data, file["foo"][...]))
@@ -76,7 +76,7 @@ class Test_Extendable(unittest.TestCase):
         data = np.random.random([10, 10])
 
         with h5py.File("foo.h5", "w") as file:
-            with g5.ExtendableList(file, "foo", data.dtype, chunk=9) as dset:
+            with g5.ExtendableList(file, "foo", data.dtype, buffer=9) as dset:
                 for d in data:
                     dset.append(d)
             self.assertTrue(np.allclose(data.ravel(), file["foo"][...]))
@@ -85,7 +85,7 @@ class Test_Extendable(unittest.TestCase):
         data = np.random.random([10, 10])
 
         with h5py.File("foo.h5", "w") as file:
-            with g5.ExtendableList(file, "foo", data.dtype, chunk=9) as dset:
+            with g5.ExtendableList(file, "foo", data.dtype, buffer=9) as dset:
                 for d in data:
                     dset += d
             self.assertTrue(np.allclose(data.ravel(), file["foo"][...]))
@@ -172,7 +172,7 @@ class Test_Extendable(unittest.TestCase):
 
         with h5py.File("foo.h5", "w") as file:
             for data in dataset:
-                with g5.ExtendableList(file, "foo", data.dtype, chunk=9) as dset:
+                with g5.ExtendableList(file, "foo", data.dtype, buffer=9) as dset:
                     for d in data:
                         dset.append(d)
             self.assertTrue(np.allclose(dataset.ravel(), file["foo"][...]))

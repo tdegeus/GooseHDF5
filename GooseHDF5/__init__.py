@@ -47,13 +47,16 @@ class ExtendableSlice:
     :param name: Path to the dataset.
     :param shape:
         Shape of the slice (only new dataset).
-        The shape of the dataset is ``[None] + shape`` (``None`` is the extendable dimension).
+        The shape of the dataset is ``[0] + shape`` (``0`` is the extendable dimension).
     :param dtype: Data-type to use (only new dataset).
-    :param chunk: Chunk size: flush after this many slices.
     :param maxshape:
         Maximum shape of all dimensions >= 1 (only new dataset).
         Default: same as ``shape``.
-    :param kwargs: An optional dictionary with attributes.
+        The maxshape of the dataset is ``[None] + maxshape`` (``None`` is the extendable dimension).
+    :param attrs: A dictionary with attributes.
+    :param kwargs:
+        Additional options for ``h5py.File.create_dataset``.
+        If not specified, ``chunks=[1] + shape`` is used.
     """
 
     def __init__(
@@ -62,8 +65,8 @@ class ExtendableSlice:
         name: str,
         shape: tuple[int, ...] = None,
         dtype=None,
-        chunk: int = 1,
         maxshape: tuple[int, ...] = None,
+        attrs: dict = None,
         **kwargs,
     ):
         if maxshape is None:
@@ -83,55 +86,27 @@ class ExtendableSlice:
             assert shape is not None, "shape must be specified for new datasets"
             self.shape = list(shape)
             self.dset = file.create_dataset(
-                name=name, shape=[0] + self.shape, maxshape=[None] + list(maxshape), dtype=dtype
+                name=name,
+                shape=[0] + self.shape,
+                maxshape=[None] + list(maxshape),
+                dtype=dtype,
+                chunks=kwargs.pop("chunks", (1, *self.shape)),
+                **kwargs,
             )
 
-        for attr in kwargs:
-            self.dset.attrs[attr] = kwargs[attr]
+        if attrs is not None:
+            for attr in attrs:
+                self.dset.attrs[attr] = kwargs[attr]
 
-        self.chunk = chunk
-        self.data = np.empty([self.chunk] + self.shape, dtype=dtype)
-        self.i = 0
         self.dset.parent.file.flush()
-
-    def _flush_full_buffer(self):
-        """
-        Flush the buffer if the chunk is full.
-        """
-        if self.i == self.chunk:
-            return self.flush()
-        return self
-
-    def flush(self):
-        """
-        Flush the buffer.
-        """
-        if self.i > 0:
-            self.dset.resize([self.dset.shape[0] + self.i] + self.shape)
-            self.dset[-self.i :, ...] = self.data[: self.i, ...]
-            self.i = 0
-            self.dset.parent.file.flush()
-        return self
 
     def append(self, data: ArrayLike):
         """
         Add new slice to the dataset.
 
-        .. note::
-
-            If a buffer is used, the data may not be written to the dataset immediately.
-            The data is only written to the dataset when the buffer is full.
-            At that point, the file is flushed.
-
-            In other cases,
-            the data is directly written to the dataset and the file is flushed immediately.
-
         :param data: The "slice" to append.
         """
-        assert np.all(np.equal(data.shape, self.shape)), "shape mismatch"
-        self.data[self.i, ...] = data
-        self.i += 1
-        return self._flush_full_buffer()
+        return self.setitem(self.dset.shape[0], data)
 
     def __add__(self, data: ArrayLike):
         return self.append(data)
@@ -148,7 +123,6 @@ class ExtendableSlice:
         :param data: The "slice" to append.
         """
         assert np.all(np.equal(data.shape, self.shape)), "shape mismatch"
-        self.flush()
 
         if np.isscalar(index):
             idx = index
@@ -174,7 +148,7 @@ class ExtendableSlice:
         return self
 
     def __exit__(self, *args):
-        self.flush()
+        pass
 
 
 class ExtendableList:
@@ -191,33 +165,53 @@ class ExtendableList:
                     dset.append(d)
 
     :param file: Opened HDF5 file (in write mode).
-    :param key: Path to the dataset.
+    :param name: Path to the dataset.
     :param dtype: Data-type to use (only new dataset).
-    :param chunk: Chunk size: flush after this many entries.
-    :param kwargs: An optional dictionary with attributes.
+    :param buffer: Buffer size: flush file after this many entries.
+    :param attrs: A dictionary with attributes.
+    :param kwargs:
+        Additional options for ``h5py.File.create_dataset``.
+        If not specified, ``chunks=(1,)`` is used.
     """
 
-    def __init__(self, file: h5py.File, key: str, dtype=None, chunk: int = 1000, **kwargs):
-        self.chunk = chunk
-        self.data = np.empty(chunk, dtype=dtype)
+    def __init__(
+        self,
+        file: h5py.File,
+        name: str,
+        dtype=None,
+        buffer: int = None,
+        attrs: dict = None,
+        **kwargs,
+    ):
+        self.buffer = buffer
+        if self.buffer is not None:
+            self.data = np.empty(buffer, dtype=dtype)
         self.i = 0
 
-        if key in file:
-            self.dset = file[key]
+        if name in file:
+            self.dset = file[name]
         else:
             assert dtype is not None, "dtype must be specified for new datasets"
-            self.dset = file.create_dataset(key, (0,), maxshape=(None,), dtype=dtype)
+            self.dset = file.create_dataset(
+                name=name,
+                shape=(0,),
+                maxshape=(None,),
+                dtype=dtype,
+                chunks=kwargs.pop("chunks", (1,)),
+                **kwargs,
+            )
 
-        for attr in kwargs:
-            self.dset.attrs[attr] = kwargs[attr]
+        if attrs is not None:
+            for attr in attrs:
+                self.dset.attrs[attr] = kwargs[attr]
 
         self.dset.parent.file.flush()
 
     def _flush_full_buffer(self):
         """
-        Flush the buffer if the chunk is full.
+        Flush the buffer if the buffer is full.
         """
-        if self.i == self.chunk:
+        if self.i == self.buffer:
             return self.flush()
         return self
 
@@ -254,6 +248,9 @@ class ExtendableList:
             self.dset[-n:] = data
             self.dset.parent.file.flush()
             return self
+
+        if self.buffer is None:
+            return self.setitem(self.dset.size, data)
 
         self.data[self.i] = data
         self.i += 1
