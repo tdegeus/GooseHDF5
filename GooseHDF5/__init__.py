@@ -54,9 +54,7 @@ class ExtendableSlice:
         Default: same as ``shape``.
         The maxshape of the dataset is ``[None] + maxshape`` (``None`` is the extendable dimension).
     :param attrs: A dictionary with attributes.
-    :param kwargs:
-        Additional options for ``h5py.File.create_dataset``.
-        If not specified, ``chunks=[1] + shape`` is used.
+    :param kwargs: Additional options for ``h5py.File.create_dataset`` (e.g. ``chunks``).
     """
 
     def __init__(
@@ -90,7 +88,6 @@ class ExtendableSlice:
                 shape=[0] + self.shape,
                 maxshape=[None] + list(maxshape),
                 dtype=dtype,
-                chunks=kwargs.pop("chunks", (1, *self.shape)),
                 **kwargs,
             )
 
@@ -169,9 +166,7 @@ class ExtendableList:
     :param dtype: Data-type to use (only new dataset).
     :param buffer: Buffer size: flush file after this many entries.
     :param attrs: A dictionary with attributes.
-    :param kwargs:
-        Additional options for ``h5py.File.create_dataset``.
-        If not specified, ``chunks=(1,)`` is used.
+    :param kwargs: Additional options for ``h5py.File.create_dataset`` (e.g. ``chunks``).
     """
 
     def __init__(
@@ -197,7 +192,6 @@ class ExtendableList:
                 shape=(0,),
                 maxshape=(None,),
                 dtype=dtype,
-                chunks=kwargs.pop("chunks", (1,)),
                 **kwargs,
             )
 
