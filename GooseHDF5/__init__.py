@@ -323,26 +323,36 @@ class ExtendableList:
         self.flush()
 
 
-def create_extendible(file: h5py.File, key: str, dtype, ndim: int = 1, **kwargs) -> h5py.Dataset:
+def create_extendible(
+    file: h5py.File, name: str, dtype, attrs: dict = {}, **kwargs
+) -> h5py.Dataset:
     """
     Create extendible dataset.
 
     :param file: Opened HDF5 file.
-    :param key: Path to the dataset.
+    :param name: Path to the dataset.
     :param dtype: Data-type to use.
-    :param ndim: Number of dimensions.
-    :param kwargs: An optional dictionary with attributes.
+    :param attrs: An optional dictionary with attributes.
+    :param kwargs:
+        Additional options for ``h5py.File.create_dataset``.
+        If not specified, ``shape = [0] * ndim`` and ``maxshape = [None] * ndim``.
+        If you you specify ``shape`` or ``maxdim``, ``ndim`` can be omitted.
     """
 
-    if key in file:
-        return file[key]
+    if name in file:
+        return file[name]
 
-    shape = tuple(0 for i in range(ndim))
-    maxshape = tuple(None for i in range(ndim))
-    dset = file.create_dataset(key, shape, maxshape=maxshape, dtype=dtype)
+    if "ndim" in kwargs:
+        ndim = kwargs.pop("ndim")
+    else:
+        ndim = len(kwargs["shape"]) if "shape" in kwargs else len(kwargs["maxshape"])
 
-    for attr in kwargs:
-        dset.attrs[attr] = kwargs[attr]
+    shape = kwargs.pop("shape", tuple(0 for i in range(ndim)))
+    maxshape = kwargs.pop("maxshape", tuple(None for i in range(ndim)))
+    dset = file.create_dataset(name=name, shape=shape, maxshape=maxshape, dtype=dtype, **kwargs)
+
+    for attr in attrs:
+        dset.attrs[attr] = attrs[attr]
 
     return dset
 
