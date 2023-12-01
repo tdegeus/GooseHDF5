@@ -74,7 +74,7 @@ class ExtendableSlice:
             self.dset = file[name]
             self.shape = list(self.dset.shape[1:])
             if shape is not None:
-                assert np.all(np.equal(shape, self.shape)), "shape mismatch"
+                assert list(shape) == self.shape, "shape mismatch"
             if maxshape is not None:
                 assert list(self.dset.maxshape) == [None] + list(maxshape), "maxshape mismatch"
             else:
@@ -1018,12 +1018,16 @@ def _equal_value(a, b, close):
             return np.allclose(a, b)
         if not np.issubdtype(b.dtype, np.integer):
             return False
+        if a.shape != b.shape:
+            return False
         if np.all(np.equal(a, b)):
             return True
         return False
 
     if a.dtype == np.bool_:
         if b.dtype != np.bool_:
+            return False
+        if a.shape != b.shape:
             return False
         if np.all(np.equal(a, b)):
             return True
