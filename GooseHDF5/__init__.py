@@ -119,8 +119,6 @@ class ExtendableSlice:
         :param index: The index of the slice.
         :param data: The "slice" to append.
         """
-        assert np.all(np.equal(data.shape, self.shape)), "shape mismatch"
-
         if np.isscalar(index):
             idx = index
         else:

@@ -191,16 +191,45 @@ class Test_Extendable(unittest.TestCase):
 
         with h5py.File("foo.h5", "w") as file:
             with g5.ExtendableSlice(file, "foo", data.shape[1:], data.dtype) as dset:
+                pass
+
+            with g5.ExtendableSlice(file, "foo") as dset:
                 for i in range(data.shape[0]):
                     dset[i] = data[i]
+
             self.assertTrue(np.allclose(data, file["foo"][...]))
 
         with h5py.File("foo.h5", "w") as file:
             with g5.ExtendableSlice(file, "foo", data.shape[1:], data.dtype) as dset:
                 pass
+
             with g5.ExtendableSlice(file, "foo") as dset:
                 for i in range(data.shape[0]):
                     dset[i] = data[i]
+
+            self.assertTrue(np.allclose(data, file["foo"][...]))
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableSlice(file, "foo", data.shape[1:], data.dtype) as dset:
+                pass
+
+            with g5.ExtendableSlice(file, "foo") as dset:
+                for i in range(data.shape[0]):
+                    for j in range(data.shape[1]):
+                        dset[i, j, :] = data[i, j, :]
+
+            self.assertTrue(np.allclose(data, file["foo"][...]))
+
+        with h5py.File("foo.h5", "w") as file:
+            with g5.ExtendableSlice(file, "foo", data.shape[1:], data.dtype) as dset:
+                pass
+
+            with g5.ExtendableSlice(file, "foo") as dset:
+                for i in range(data.shape[0]):
+                    for j in range(data.shape[1]):
+                        dset[i, j, :5] = data[i, j, :5]
+                        dset[i, j, 5:] = data[i, j, 5:]
+
             self.assertTrue(np.allclose(data, file["foo"][...]))
 
     def test_ExtendableSlice_add(self):
@@ -210,9 +239,11 @@ class Test_Extendable(unittest.TestCase):
             with g5.ExtendableSlice(file, "foo", data.shape[1:], data.dtype) as dset:
                 for d in data[:3, ...]:
                     dset += d
+
             with g5.ExtendableSlice(file, "foo") as dset:
                 for d in data[3:, ...]:
                     dset += d
+
             self.assertTrue(np.allclose(data, file["foo"][...]))
 
     def test_ExtendableSlice_maxshape(self):
