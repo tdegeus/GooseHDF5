@@ -11,7 +11,6 @@ import sys
 import uuid
 import warnings
 from difflib import SequenceMatcher
-from functools import singledispatch
 from typing import Iterator
 
 import h5py
@@ -1245,18 +1244,18 @@ def compare_allow(
     return ret
 
 
-@singledispatch
 def compare(
-    a: str | h5py.File,
-    b: str | h5py.File,
+    a: h5py.File,
+    b: h5py.File,
     paths_a: list[str] = None,
     paths_b: list[str] = None,
     attrs: bool = True,
     matching_dtype: bool = False,
     shallow: bool = False,
     only_datasets: bool = False,
-    fold: str | list[str] = None,
     max_depth: int = None,
+    fold: str | list[str] = None,
+    list_folded: bool = False,
     close: bool = False,
 ) -> dict[list]:
     """
@@ -1289,24 +1288,6 @@ def compare(
     :param close: Use ``np.isclose`` also on ``float``-``int`` matches.
     :return: Dictionary with difference.
     """
-    raise NotImplementedError("Overload not found.")
-
-
-@compare.register(h5py.File)
-def _(
-    a: h5py.File,
-    b: h5py.File,
-    paths_a: list[str] = None,
-    paths_b: list[str] = None,
-    attrs: bool = True,
-    matching_dtype: bool = False,
-    shallow: bool = False,
-    only_datasets: bool = False,
-    max_depth: int = None,
-    fold: str | list[str] = None,
-    list_folded: bool = False,
-    close: bool = False,
-) -> dict[list]:
     ret = {"<-": [], "->": [], "!=": [], "==": []}
     paths_a, paths_b, fold_a, fold_b = _compare_paths(
         a, b, paths_a, paths_b, False if only_datasets else attrs, max_depth, fold
@@ -1334,38 +1315,6 @@ def _(
         ret["??"] = [str(i) for i in np.unique(fold_a + fold_b)]
 
     return ret
-
-
-@compare.register(str)
-def _(
-    a: str,
-    b: str,
-    paths_a: list[str] = None,
-    paths_b: list[str] = None,
-    attrs: bool = True,
-    matching_dtype: bool = False,
-    shallow: bool = False,
-    only_datasets: bool = False,
-    max_depth: int = None,
-    fold: str | list[str] = None,
-    list_folded: bool = False,
-    close: bool = False,
-) -> dict[list]:
-    with h5py.File(a, "r") as a_file, h5py.File(b, "r") as b_file:
-        return compare(
-            a_file,
-            b_file,
-            paths_a,
-            paths_b,
-            attrs,
-            matching_dtype,
-            shallow,
-            only_datasets,
-            max_depth,
-            fold,
-            list_folded,
-            close,
-        )
 
 
 def compare_rename(
