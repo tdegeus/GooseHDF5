@@ -19,7 +19,6 @@ import prettytable
 import yaml
 from numpy.typing import ArrayLike
 from termcolor import colored
-from typing_extensions import deprecated
 
 from ._version import version  # noqa: F401
 from ._version import version_tuple  # noqa: F401
@@ -1445,40 +1444,6 @@ def compare_rename(
         ret["??"] = [str(i) for i in np.unique(fold_a + fold_b)]
 
     return ret, ret_a, ret_b
-
-
-@deprecated("Use GooseHDF5.copy. If used for compression please submit an issue.")
-def copy_dataset(source, dest, paths, compress=False, double_to_float=False):
-    r"""
-    Copy a dataset from one file to another. This function also copies possible attributes.
-
-    :param h5py.File source: The source HDF5-archive.
-    :param h5py.File dest: The destination HDF5-archive.
-
-    :type paths: str, list
-    :param paths: (List of) HDF5-path(s) to copy.
-
-    :param bool compress: Compress the destination dataset(s).
-    :param bool double_to_float: Convert doubles to floats before copying.
-    """
-
-    if not isinstance(paths, list):
-        paths = list(paths)
-
-    for path in paths:
-        data = source[path][...]
-
-        if data.size == 1 or not compress or not isnumeric(data):
-            dest[path] = source[path][...]
-        else:
-            dtype = source[path].dtype
-            if dtype == np.float64 and double_to_float:
-                dtype = np.float32
-            dset = dest.create_dataset(path, data.shape, dtype=dtype, compression="gzip")
-            dset[:] = data
-
-        for key in source[path].attrs:
-            dest[path].attrs[key] = source[path].attrs[key]
 
 
 def _linktype2str(source: h5py.File | h5py.Group, path: str) -> str:
